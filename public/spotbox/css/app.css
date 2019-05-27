@@ -1,0 +1,15 @@
+.row {
+    margin-top: 10px;
+}
+
+@media (min-width: 1300px) {
+    .container {
+        max-width: 1240px;
+    }
+}
+
+@media (min-width: 1500px) {
+    .container {
+        max-width: 1440px;
+    }
+}

@@ -1,4 +1,4 @@
-val reactVersion = "16.7.0"
+val reactVersion = "16.8.4"
 val scalaJSReactVersion = "1.4.2"
 val scalaCssVersion = "0.5.6"
 
@@ -15,7 +15,7 @@ lazy val root = (project in file(".")).
     scalacOptions += "-Ypartial-unification",
     scalaJSUseMainModuleInitializer := true,
     // creates single js resource file for easy integration in html page
-    //skip in packageJSDependencies := false,
+    skip in packageJSDependencies := false,
     version in webpack := "4.28.1",
     version in startWebpackDevServer := "3.1.14",
     libraryDependencies ++= Seq(
