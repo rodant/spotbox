@@ -4,6 +4,7 @@ import japgolly.scalajs.react.component.Scala.BackendScope
 import japgolly.scalajs.react.vdom.VdomElement
 import japgolly.scalajs.react.{Callback, Reusability, ScalaComponent}
 import me.spoter.models.{IRI, Resource}
+import me.spoter.services.ResourceService
 import me.spoter.{Session, SessionTracker, StateXSession}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,7 +37,7 @@ class SPOTBoxBackend(bs: BackendScope[Unit, StateXSession[State]]) extends Entit
   }
 
   private[pages] def fetchEntities(s: Session, forceLoad: Boolean = false): Future[State] =
-    Future.successful(State(Seq()))
+    ResourceService.listFolder(IRI(s.webId).parent.parent).map(rs => State(rs))
 }
 
 object SPOTBoxPage extends SessionTracker[Unit, State, SPOTBoxBackend] {
