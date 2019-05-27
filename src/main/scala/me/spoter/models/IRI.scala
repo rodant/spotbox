@@ -27,5 +27,7 @@ case class IRI(private val sourceUri: URI) {
 }
 
 object IRI {
+  val BlankNodeIRI = IRI("_blank")
+
   def apply(uriStr: String): IRI = IRI(URI.create(uriStr))
 }

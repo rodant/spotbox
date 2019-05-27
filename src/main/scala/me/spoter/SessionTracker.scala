@@ -4,6 +4,7 @@ import java.net.URI
 
 import japgolly.scalajs.react.{Callback, Reusability}
 import japgolly.scalajs.react.component.builder.Lifecycle.ComponentDidMount
+import me.spoter.models.IRI
 import me.spoter.solid_libs.SolidAuth
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,7 +19,7 @@ trait SessionTracker[P, S, B] {
   private var loginCallback: Option[js.Function1[js.Dynamic, Unit]] = None
   private var logoutCallback: Option[js.Function1[js.Dynamic, Unit]] = None
 
-  protected val initialSession = Session(URI.create("_blank"))
+  protected val initialSession = Session(IRI.BlankNodeIRI.innerUri)
   protected implicit val stateReuse: Reusability[StateXSession[S]] = Reusability.by_==[StateXSession[S]]
 
   protected def trackSessionOn(f: Session => Future[S])(c: ComponentDidMount[P, StateXSession[S], B]): Callback = Callback {
