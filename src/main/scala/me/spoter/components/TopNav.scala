@@ -24,7 +24,7 @@ object TopNav extends SessionTracker[Unit, Unit, Unit] {
 
   private def render(stateXSession: StateXSession[Unit]): VdomElement = {
     val loggedIn = stateXSession.session.isDefined
-    NavBar(expand = "lg", bg = "light")(^.backgroundColor := "darkseagreen")(
+    NavBar(expand = "lg", bg = "light")(
       NavBarBrand("#")(
         <.div(^.display := "flex",
           <.img(^.src := "public/spotbox/images/logo.png", ^.alt := "spoter.ME",
