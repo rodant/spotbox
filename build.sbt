@@ -27,9 +27,9 @@ lazy val root = (project in file(".")).
       "com.payalabs" %%% "scalajs-react-bridge" % "0.8.0",
       "org.scala-js" %%% "scalajs-java-time" % "0.2.5",
       "com.beachape" %%% "enumeratum" % "1.5.13",
-      //"org.typelevel" %%% "cats-core" % "1.6.0",
-      //"org.typelevel" %%% "cats-macros" % "1.6.0",
-      //"org.typelevel" %%% "cats-kernel" % "1.6.0",
+      "org.typelevel" %%% "cats-core" % "1.6.0",
+      "org.typelevel" %%% "cats-macros" % "1.6.0",
+      "org.typelevel" %%% "cats-kernel" % "1.6.0",
       "org.scalatest" %%% "scalatest" % "3.0.7" % Test
     ),
     npmDependencies in Compile ++= Seq(
