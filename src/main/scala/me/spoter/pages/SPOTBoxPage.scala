@@ -14,8 +14,6 @@ class SPOTBoxBackend(bs: BackendScope[Unit, StateXSession[State]]) extends Entit
   override protected val entityUriFragment: String = "path"
   override protected val entityRenderName: String = "Ressources"
 
-  override def render(sxs: StateXSession[State]): VdomElement = super.render(sxs)
-
   override protected def newEntity(): Resource = Resource()
 
   override protected def createEntity(sxs: StateXSession[State]): Callback = Callback.future {
