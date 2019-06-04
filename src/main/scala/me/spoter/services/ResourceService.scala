@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object ResourceService {
-  def listFolder(iri: IRI): Future[Seq[Resource]] = {
+  def listFolder(iri: IRI, showHidden: Boolean = false): Future[Seq[Resource]] = {
     RDFHelper.listDir(iri.innerUri)
       .flatMap { us =>
         Future.traverse(us) { u =>
@@ -17,7 +17,7 @@ object ResourceService {
           }.recover {
             case e if e.getMessage.contains("Forbidden") => Resource()
           }
-        }.map(_.filter(_ != Resource.BlankResource))
+        }.map(_.filter(r => r != Resource.BlankResource && (if (showHidden) true else !r.isHidden)))
       }
   }
 }
