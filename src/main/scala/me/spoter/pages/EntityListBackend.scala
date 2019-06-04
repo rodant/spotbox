@@ -4,10 +4,10 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import me.spoter.StateXSession
 import me.spoter.components._
-import me.spoter.components.bootstrap.{Container, Form, FormControl, Row}
-import me.spoter.models.{IRI, SPOTEntity}
+import me.spoter.components.bootstrap.{Col, Container, Form, FormControl, Row}
+import me.spoter.models.{IRI, Resource}
 
-case class State(es: Iterable[SPOTEntity], newEntity: Option[SPOTEntity] = None)
+case class State(es: Iterable[Resource], newEntity: Option[Resource] = None)
 
 abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
   protected val entityUriFragment: String
@@ -15,7 +15,7 @@ abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
 
   protected val deleteEntity: Option[IRI => Callback] = None
 
-  protected def newEntity(): SPOTEntity
+  protected def newEntity(): Resource
 
   protected def createEntity(sxs: StateXSession[State]): Callback
 
@@ -23,13 +23,21 @@ abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
     val es = sxs.state.es
     Container(
       Row()(
-        renderWhen(sxs.session.isDefined) {
-          <.i(^.className := "fas fa-plus-circle fa-2x",
-            ^.title := "Neu Anlegen",
-            ^.color := "darkseagreen",
-            ^.marginLeft := 30.px,
-            ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
-        }
+        Col(xl = 4, lg = 4, md = 4, sm = 9, xs = 9)(
+          <.div(^.display := "flex",
+            <.i(^.color := "#F97B", ^.className := "fas fa-folder-open fa-2x"),
+            <.div(^.alignSelf := "center", "SPOT/")
+          )
+        ),
+        Col()(
+          renderWhen(sxs.session.isDefined) {
+            <.i(^.className := "fas fa-plus-circle fa-2x",
+              ^.title := "Neu Anlegen",
+              ^.color := "#007bff",
+              ^.marginLeft := 30.px,
+              ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
+          }
+        )
       ),
       renderWhen(sxs.session.isEmpty) {
         <.h2("Bitte einloggen!")
