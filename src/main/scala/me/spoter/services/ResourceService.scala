@@ -6,23 +6,19 @@ import me.spoter.solid_libs.RDFHelper
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-/**
-  *
-  */
 object ResourceService {
   def listFolder(iri: IRI): Future[Seq[Resource]] = {
     RDFHelper.listDir(iri.innerUri)
       .flatMap { us =>
         Future.traverse(us) { u =>
-          if (!u.toString.endsWith("robots.txt") && !u.toString.endsWith("favicon.ico")) {
-            RDFHelper.loadEntity(u) {
-              val iri = IRI(u)
-              Resource(iri, iri.removeTailingSlash.lastPathComponent)
-            }
-          } else {
-            Future.successful(Resource(IRI.BlankNodeIRI))
+          RDFHelper.loadEntity(u) {
+            val iri = IRI(u)
+            Resource(iri, iri.removeTailingSlash.lastPathComponent)
+          }.recover {
+            case e if e.getMessage.contains("Forbidden") => Resource()
           }
-        }
+        }.map(_.filter(_ != Resource.BlankResource))
       }
   }
 }
+
