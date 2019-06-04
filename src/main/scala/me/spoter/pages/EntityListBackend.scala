@@ -33,6 +33,7 @@ abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
           renderWhen(sxs.session.isDefined) {
             <.i(^.className := "fas fa-plus-circle fa-2x",
               ^.title := "Neu Anlegen",
+              ^.cursor := "pointer",
               ^.color := "#007bff",
               ^.marginLeft := 30.px,
               ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
