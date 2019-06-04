@@ -13,7 +13,9 @@ object ResourceService {
         Future.traverse(us) { u =>
           RDFHelper.loadEntity(u) {
             val iri = IRI(u)
-            Resource(iri, iri.removeTailingSlash.lastPathComponent)
+            val types = RDFHelper.getAll(u, RDFHelper.RDF("type"))
+            val isContainer = types.exists(_.value.toString.contains("Container"))
+            Resource(iri, iri.removeTailingSlash.lastPathComponent, isFolder = isContainer)
           }.recover {
             case e if e.getMessage.contains("Forbidden") => Resource()
           }

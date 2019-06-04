@@ -82,7 +82,7 @@ object RDFHelper {
     load(sub, options).map(_ => b)
   }
 
-  private def getAll(sub: URI, prop: js.Dynamic): js.Array[js.Dynamic] =
+  def getAll(sub: URI, prop: js.Dynamic): js.Array[js.Dynamic] =
     store.each(RDFLib.sym(sub.toString), prop).asInstanceOf[js.Array[js.Dynamic]]
 
   def get(sub: URI, prop: js.Dynamic): js.Dynamic = store.any(RDFLib.sym(sub.toString), prop)

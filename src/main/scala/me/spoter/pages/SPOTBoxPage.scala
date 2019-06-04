@@ -35,7 +35,18 @@ class SPOTBoxBackend(bs: BackendScope[Unit, StateXSession[State]]) extends Entit
   }
 
   private[pages] def fetchEntities(s: Session, forceLoad: Boolean = false): Future[State] =
-    ResourceService.listFolder(IRI(s.webId).parent.parent).map(rs => State(rs))
+    ResourceService.listFolder(IRI(s.webId).parent.parent).map { rs =>
+      val resourceOrd = new Ordering[Resource] {
+        override def compare(x: Resource, y: Resource): Int = (x, y) match {
+          case (Resource(_, _, true), Resource(_, _, false)) => -1
+          case (Resource(_, _, false), Resource(_, _, true)) => 1
+          case (Resource(_, nx, _), Resource(_, ny, _)) => Ordering.String.compare(nx, ny)
+        }
+      }
+
+      val sortedRes = rs.toArray.sorted(resourceOrd)
+      State(sortedRes)
+    }
 }
 
 object SPOTBoxPage extends SessionTracker[Unit, State, SPOTBoxBackend] {
