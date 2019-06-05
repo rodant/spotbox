@@ -28,7 +28,7 @@ abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
             <.i(^.color := "#F97B", ^.alignSelf := "center", ^.className := "fas fa-folder-open fa-2x ui-elem"),
             <.div(^.display := "flex",
               <.i(^.alignSelf := "center", ^.className := "fas fa-home ui-elem", ^.fontSize := "1.3em"),
-              Breadcrumb()(^.alignSelf := "center")(BreadcrumbItem(active = true)("SPOT")))
+              Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(BreadcrumbItem(active = true)("SPOT")))
           )
         ),
         Col()(

@@ -13,6 +13,6 @@ object Breadcrumb extends ReactBridgeComponent {
 
   override protected lazy val componentValue: js.Any = RawComponent
 
-  def apply(): WithProps = auto
+  def apply(bsPrefix: js.UndefOr[String] = js.undefined): WithProps = auto
 }
 
