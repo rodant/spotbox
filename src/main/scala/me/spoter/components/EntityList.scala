@@ -30,13 +30,13 @@ object EntityList {
     val fileIcon = <.i(^.alignSelf := "center", ^.color := "#0009", ^.className := "far fa-file-alt fa-2x")
     <.div(
       Row()(
-        Col(xl = 9, lg = 9, md = 9, sm = 9, xs = 9)(
+        Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
           <.div(^.display := "flex",
             if (e.isFolder) folderIcon else fileIcon,
             NavLink(href = s"#$uriFragment?iri=${e.iri}")(e.name)
           )
         ),
-        Col(xl = 3, lg = 3, md = 3, sm = 3, xs = 3)(
+        Col()(
           <.i(^.className := "fas fa-file-download ui-elem",
             ^.title := "Download",
             ^.fontSize := "1.3em",

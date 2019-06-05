@@ -23,7 +23,7 @@ abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
     val es = sxs.state.es
     Container(
       Row()(^.borderBottom := "1px lightgrey solid", ^.paddingBottom := 5.px)(
-        Col(xl = 9, lg = 9, md = 9, sm = 9, xs = 9)(
+        Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
           <.div(^.display := "flex",
             <.i(^.color := "#F97B", ^.alignSelf := "center", ^.className := "fas fa-folder-open fa-2x ui-elem"),
             <.div(^.display := "flex",
