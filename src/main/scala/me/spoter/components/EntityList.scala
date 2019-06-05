@@ -37,14 +37,18 @@ object EntityList {
           )
         ),
         Col(xl = 3, lg = 3, md = 3, sm = 3, xs = 3)(
-          <.i(^.className := "far fa-trash-alt",
+          <.i(^.className := "fas fa-file-download ui-elem",
+            ^.title := "Download",
+            ^.fontSize := "1.3em",
+            ^.cursor := "pointer",
+            ^.onClick --> Callback.empty),
+          <.i(^.className := "far fa-trash-alt ui-elem",
             ^.title := "Löschen",
             ^.color := "#0009",
+            ^.fontSize := "1.3em",
             ^.cursor := "pointer",
             ^.marginTop := 10.px,
-            ^.marginLeft := 10.px,
-            ^.verticalAlign := "bottom",
-            ^.onClick --> $.modState(_.copy(entityToDelete = Some(e))))
+            ^.onClick --> $.modState(_.copy(entityToDelete = Some(e)))),
         ).when($.props.deleteHandler.isDefined)
       )
     )

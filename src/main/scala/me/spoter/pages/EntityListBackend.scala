@@ -25,22 +25,26 @@ abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
       Row()(^.borderBottom := "1px lightgrey solid", ^.paddingBottom := 5.px)(
         Col(xl = 9, lg = 9, md = 9, sm = 9, xs = 9)(
           <.div(^.display := "flex",
-            <.i(^.color := "#F97B", ^.className := "fas fa-folder-open fa-2x"),
-            <.div(^.alignSelf := "center", "SPOT/")
+            <.i(^.color := "#F97B", ^.className := "fas fa-folder-open fa-2x ui-elem"),
+            <.div(^.alignSelf := "center",
+              <.i(^.className := "fas fa-home ui-elem", ^.fontSize := "1.3em"),
+              "SPOT/")
           )
         ),
         Col()(
           renderWhen(sxs.session.isDefined) {
             <.i(^.className := "fas fa-folder-plus ui-elem",
               ^.title := "Neuer Ordner",
+              ^.fontSize := "1.3em",
               ^.cursor := "pointer",
               ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
           },
           renderWhen(sxs.session.isDefined) {
-            <.i(^.className := "fas fa-file-medical ui-elem",
-              ^.title := "Neue Datei",
+            <.i(^.className := "fas fa-file-upload ui-elem",
+              ^.title := "Datei hochladen",
+              ^.fontSize := "1.3em",
               ^.cursor := "pointer",
-              ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
+              ^.onClick --> Callback.empty)
           }
         )
       ),
