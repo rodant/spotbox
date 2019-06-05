@@ -24,12 +24,12 @@ object TopNav extends SessionTracker[Unit, Unit, Unit] {
 
   private def render(stateXSession: StateXSession[Unit]): VdomElement = {
     val loggedIn = stateXSession.session.isDefined
-    NavBar(expand = "lg", bg = "light")(
+    NavBar(expand = "lg", bg = "dark", variant = "dark")(
       NavBarBrand("#")(
         <.div(^.display := "flex",
-          <.img(^.src := "public/spotbox/images/logo.png", ^.alt := "spoter.ME",
-            ^.className := "d-inline-block align-top", ^.width := 50.px, ^.height := 50.px),
-          <.div(^.alignSelf:= "center", ^.margin := 10.px, "SPOTBox"))),
+          <.img(^.src := "public/spotbox/images/logo-white.png", ^.alt := "spoter.ME",
+            ^.className := "d-inline-block align-top", ^.width := 205.px, ^.height := 35.px),
+          <.div(^.alignSelf:= "center", ^.margin := "0 10px", "SPOTBox"))),
       NavBarToggle()(^.aria.controls := "basic-navbar-nav"),
       NavBarCollapse()(^.id := "basic-navbar-nav")(
         Nav()(^.className := "mr-auto")(

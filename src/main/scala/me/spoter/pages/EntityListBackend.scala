@@ -4,7 +4,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import me.spoter.StateXSession
 import me.spoter.components._
-import me.spoter.components.bootstrap.{Col, Container, Form, FormControl, Row}
+import me.spoter.components.bootstrap._
 import me.spoter.models.{IRI, Resource}
 
 case class State(es: Iterable[Resource], newEntity: Option[Resource] = None)
@@ -22,8 +22,8 @@ abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
   def render(sxs: StateXSession[State]): VdomElement = {
     val es = sxs.state.es
     Container(
-      Row()(
-        Col(xl = 4, lg = 4, md = 4, sm = 9, xs = 9)(
+      Row()(^.borderBottom := "1px lightgrey solid", ^.paddingBottom := 5.px)(
+        Col(xl = 9, lg = 9, md = 9, sm = 9, xs = 9)(
           <.div(^.display := "flex",
             <.i(^.color := "#F97B", ^.className := "fas fa-folder-open fa-2x"),
             <.div(^.alignSelf := "center", "SPOT/")
@@ -31,11 +31,15 @@ abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
         ),
         Col()(
           renderWhen(sxs.session.isDefined) {
-            <.i(^.className := "fas fa-plus-circle fa-2x",
-              ^.title := "Neu Anlegen",
+            <.i(^.className := "fas fa-folder-plus ui-elem",
+              ^.title := "Neuer Ordner",
               ^.cursor := "pointer",
-              ^.color := "#007bff",
-              ^.marginLeft := 30.px,
+              ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
+          },
+          renderWhen(sxs.session.isDefined) {
+            <.i(^.className := "fas fa-file-medical ui-elem",
+              ^.title := "Neue Datei",
+              ^.cursor := "pointer",
               ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
           }
         )
