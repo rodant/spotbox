@@ -28,8 +28,7 @@ object TopNav extends SessionTracker[Unit, Unit, Unit] {
       NavBarBrand("#")(
         <.div(^.display := "flex",
           <.img(^.src := "public/spotbox/images/logo.png", ^.alt := "spoter.ME",
-            ^.className := "d-inline-block align-top", ^.width := 205.px, ^.height := 35.px),
-          <.div(^.alignSelf:= "center", ^.margin := "0 10px", "SPOTBox"))),
+            ^.className := "d-inline-block align-top", ^.width := 205.px, ^.height := 35.px))),
       NavBarToggle()(^.aria.controls := "basic-navbar-nav"),
       NavBarCollapse()(^.id := "basic-navbar-nav")(
         Nav()(^.className := "mr-auto")(
