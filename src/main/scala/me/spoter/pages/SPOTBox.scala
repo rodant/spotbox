@@ -1,6 +1,7 @@
 package me.spoter.pages
 
 import japgolly.scalajs.react.component.Scala.BackendScope
+import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceiveProps
 import japgolly.scalajs.react.vdom.VdomElement
 import japgolly.scalajs.react.{Callback, Reusability, ScalaComponent}
 import me.spoter.models.{IRI, Resource}
@@ -15,7 +16,7 @@ object SPOTBox {
   case class Props(iri: IRI)
 
   class Backend(bs: BackendScope[Props, StateXSession[State]]) extends EntityListBackend(bs) {
-    override protected val entityUriFragment: String = "path"
+    override protected val entityUriFragment: String = "explorer"
     override protected val entityRenderName: String = "Ressources"
 
     override protected def newEntity(): Resource = Resource(name = "")
@@ -61,10 +62,19 @@ object SPOTBox {
       .builder[Props](componentName)
       .initialState(StateXSession[State](State(Seq()), Some(initialSession)))
       .renderBackend[Backend]
+      .componentWillReceiveProps(handleNextProps)
       .componentDidMount(c => trackSessionOn(s => c.backend.fetchEntities(c.props, s))(c))
       .componentWillUnmountConst(trackSessionOff())
       .configure(Reusability.shouldComponentUpdate)
       .build
+
+    private def handleNextProps(c: ComponentWillReceiveProps[Props, StateXSession[State], Backend]): Callback =
+      Callback.future {
+        c.backend.fetchEntities(c.nextProps, c.state.session.getOrElse(Session(IRI.BlankNodeIRI.innerUri)), forceLoad = true)
+          .map { s =>
+            c.modState(old => old.copy(state = s))
+          }
+      }
 
     def apply(iriS: String): VdomElement = component(Props(IRI(iriS))).vdomElement
   }
