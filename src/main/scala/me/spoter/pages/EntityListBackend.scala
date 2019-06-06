@@ -17,20 +17,16 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
 
   protected def newEntity(): Resource
 
-  protected def createEntity(sxs: StateXSession[State]): Callback
+  protected def createEntity(props: SPOTBox.Props, sxs: StateXSession[State]): Callback
 
-  def render(sxs: StateXSession[State]): VdomElement = {
+  def render(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     val es = sxs.state.es
     Container(
       Row()(^.borderBottom := "1px lightgrey solid", ^.paddingBottom := 5.px)(
         Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
           <.div(^.display := "flex",
             <.i(^.color := "#F97B", ^.alignSelf := "center", ^.className := "fas fa-folder-open fa-2x ui-elem"),
-            <.div(^.display := "flex",
-              Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(
-                BreadcrumbItem(active = true)(
-                  <.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em")),
-              ))
+            <.div(^.display := "flex", renderBreadcrumb(sxs))
           )
         ),
         Col()(
@@ -76,11 +72,18 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
     )
   }
 
-  private def onConfirm(): Callback = bs.state.flatMap[Unit] { state =>
+  private def renderBreadcrumb(sxs: StateXSession[State]): VdomElement = {
+    Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(
+      BreadcrumbItem(active = true)(
+        <.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em")),
+    )
+  }
+
+  private def onConfirm(): Callback = bs.state.zip(bs.props).flatMap[Unit] { case (state, props) =>
     if (state.state.newEntity.get.name.isEmpty)
       Callback()
     else
-      createEntity(state)
+      createEntity(props, state)
   }
 
   private def onCancel(): Callback = bs.modState(old => old.copy(state = old.state.copy(newEntity = None)))

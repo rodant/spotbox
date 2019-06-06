@@ -20,10 +20,10 @@ object SPOTBox {
 
     override protected def newEntity(): Resource = Resource(name = "")
 
-    override protected def createEntity(sxs: StateXSession[State]): Callback = Callback.future {
+    override protected def createEntity(props: Props, sxs: StateXSession[State]): Callback = Callback.future {
       val createdResourceF = Future.successful()
       createdResourceF.flatMap { _ =>
-        fetchEntities(sxs.session.get, forceLoad = true).map(s => bs.modState(_.copy(state = s)))
+        fetchEntities(props, sxs.session.get, forceLoad = true).map(s => bs.modState(_.copy(state = s)))
       }
     }
 
@@ -36,8 +36,9 @@ object SPOTBox {
       }
     }
 
-    private[pages] def fetchEntities(s: Session, forceLoad: Boolean = false): Future[State] =
-      ResourceService.listFolder(IRI(s.webId).parent.parent).map { rs =>
+    private[pages] def fetchEntities(props: Props, s: Session, forceLoad: Boolean = false): Future[State] = {
+      val effectiveIRI = if (props.iri == IRI.BlankNodeIRI) IRI(s.webId).parent.parent else props.iri
+      ResourceService.listFolder(effectiveIRI).map { rs =>
         val resourceOrd = new Ordering[Resource] {
           override def compare(x: Resource, y: Resource): Int = (x, y) match {
             case (Resource(_, _, true), Resource(_, _, false)) => -1
@@ -49,6 +50,7 @@ object SPOTBox {
         val sortedRes = rs.toArray.sorted(resourceOrd)
         State(sortedRes)
       }
+    }
   }
 
   object Page extends SessionTracker[Props, State, Backend] {
@@ -59,7 +61,7 @@ object SPOTBox {
       .builder[Props](componentName)
       .initialState(StateXSession[State](State(Seq()), Some(initialSession)))
       .renderBackend[Backend]
-      .componentDidMount(c => trackSessionOn(s => c.backend.fetchEntities(s))(c))
+      .componentDidMount(c => trackSessionOn(s => c.backend.fetchEntities(c.props, s))(c))
       .componentWillUnmountConst(trackSessionOff())
       .configure(Reusability.shouldComponentUpdate)
       .build
