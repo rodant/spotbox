@@ -3,7 +3,8 @@ package me.spoter.routes
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.vdom.html_<^._
 import me.spoter.components.{Footer, TopNav}
-import me.spoter.pages.SPOTBoxPage
+import me.spoter.models.IRI
+import me.spoter.pages.SPOTBox.Page
 
 object AppRouter {
 
@@ -15,7 +16,7 @@ object AppRouter {
     import dsl._
 
     (trimSlashes
-      | staticRoute(root, Home) ~> render(SPOTBoxPage()))
+      | staticRoute(root, Home) ~> render(Page(IRI.BlankNodeIRI.toString)))
       .notFound(redirectToPage(Home)(Redirect.Replace))
       .renderWith(layout)
   }

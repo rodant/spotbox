@@ -9,7 +9,7 @@ import me.spoter.models.{IRI, Resource}
 
 case class State(es: Iterable[Resource], newEntity: Option[Resource] = None)
 
-abstract class EntityListBackend(bs: BackendScope[Unit, StateXSession[State]]) {
+abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[State]]) {
   protected val entityUriFragment: String
   protected val entityRenderName: String
 

@@ -20,7 +20,8 @@ trait SessionTracker[P, S, B] {
   private var logoutCallback: Option[js.Function1[js.Dynamic, Unit]] = None
 
   protected val initialSession = Session(IRI.BlankNodeIRI.innerUri)
-  protected implicit val stateReuse: Reusability[StateXSession[S]] = Reusability.by_==[StateXSession[S]]
+  protected implicit val stateReuse: Reusability[StateXSession[S]] = Reusability.by_==
+  protected  implicit val propsReuse: Reusability[P] = Reusability.by_==
 
   protected def trackSessionOn(f: Session => Future[S])(c: ComponentDidMount[P, StateXSession[S], B]): Callback = Callback {
     if (loginCallback.isEmpty) loginCallback = Some(onLogin(f, c))
