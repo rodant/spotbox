@@ -26,7 +26,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
         Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
           <.div(^.display := "flex",
             <.i(^.color := "#F97B", ^.alignSelf := "center", ^.className := "fas fa-folder-open fa-2x ui-elem"),
-            <.div(^.display := "flex", renderBreadcrumb(sxs))
+            <.div(^.display := "flex", renderBreadcrumb(props))
           )
         ),
         Col()(
@@ -72,10 +72,26 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
     )
   }
 
-  private def renderBreadcrumb(sxs: StateXSession[State]): VdomElement = {
+  private def renderBreadcrumb(props: SPOTBox.Props): VdomElement = {
+    def toCompAndIRIs(cis: List[(String, IRI)]): List[(String, IRI)] = cis match {
+      case (c, iri) :: _ if iri == iri.parent => cis
+      case (_, iri) :: _ => toCompAndIRIs((iri.parent.lastPathComponent, iri.parent) :: cis)
+    }
+
+    val pathCompIriPairs = props.iri.normalize match {
+      case IRI.BlankNodeIRI => List.empty[(String, IRI)]
+      case iri => toCompAndIRIs((iri.lastPathComponent, iri) :: Nil)
+    }
+
     Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(
-      BreadcrumbItem(active = true)(
-        <.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em")),
+      pathCompIriPairs.zipWithIndex.toVdomArray {
+        case (("", iri), 0) =>
+          BreadcrumbItem(active = pathCompIriPairs.size == 1, href = s"#$entityUriFragment?iri=$iri")(
+            <.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em"))
+        case ((pc, iri), ind) =>
+          BreadcrumbItem(active = ind == pathCompIriPairs.length - 1, href = s"#$entityUriFragment?iri=$iri")(
+            <.i(^.alignSelf := "center", pc))
+      }
     )
   }
 

@@ -15,7 +15,7 @@ object ResourceService {
             val iri = IRI(u)
             val types = RDFHelper.getAll(u, RDFHelper.RDF("type"))
             val isContainer = types.exists(_.value.toString.contains("Container"))
-            Resource(iri, iri.removeTailingSlash.lastPathComponent, isFolder = isContainer)
+            Resource(iri, iri.removedTailingSlash.lastPathComponent, isFolder = isContainer)
           }.recover {
             case e if e.getMessage.contains("Forbidden") => Resource()
           }

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "Building App..."
-sbt fullOptJS::webpack
+sbt test & sbt fullOptJS::webpack
 
 USER = spoterme-spotbox
 APP = spotbox

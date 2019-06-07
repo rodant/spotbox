@@ -34,7 +34,7 @@ object RDFHelper {
   def ensureContainerExists(iri: IRI): Future[Unit] =
     for {
       res <- loadResource(iri)
-      _ <- res.fold(_ => createContainerResource(iri.baseIRI.innerUri, iri.lastPathComponent), Future(_))
+      _ <- res.fold(_ => createContainerResource(iri.parent.innerUri, iri.lastPathComponent), Future(_))
     } yield ()
 
   def loadResource(iri: IRI, forceLoad: Boolean = false): Future[Either[Throwable, js.Dynamic]] = {

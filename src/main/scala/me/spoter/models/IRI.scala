@@ -8,22 +8,29 @@ import java.net.URI
 case class IRI(private val sourceUri: URI) {
   val innerUri: URI = sourceUri
   private val uriStr: String = innerUri.toString
-  private val endOfBaseUri = uriStr.lastIndexOf("/")
+  private val endOfBaseUri =
+    if (!uriStr.endsWith("/") && !uriStr.endsWith(authority)) uriStr.lastIndexOf("/")
+    else if (uriStr.endsWith("/") && !uriStr.dropRight(1).endsWith(authority)) uriStr.dropRight(1).lastIndexOf("/")
+    else uriStr.length - 1
 
-  lazy val baseIRI: IRI = IRI(uriStr.substring(0, endOfBaseUri + 1))
-
-  val lastPathComponent: String = uriStr.substring(endOfBaseUri + 1)
-
-  def concatPath(path: String): IRI = IRI(s"$uriStr/$path")
-
-  def removeTailingSlash: IRI = IRI {
-    if (endOfBaseUri == uriStr.length - 1) uriStr.substring(0, endOfBaseUri)
-    else uriStr
+  lazy val authority: String = innerUri.getAuthority match {
+    case null => "/"
+    case a => a
   }
 
-  def parent: IRI = removeTailingSlash.baseIRI
+  lazy val parent: IRI = if (endOfBaseUri > -1) IRI(uriStr.substring(0, endOfBaseUri + 1)) else this
 
-  override def toString: String = innerUri.toString
+  lazy val lastPathComponent: String = removeTailingSlash(uriStr.substring(endOfBaseUri + 1))
+
+  lazy val removedTailingSlash: IRI = if (uriStr.endsWith("/")) IRI(removeTailingSlash(uriStr)) else this
+
+  private def removeTailingSlash(s: String): String = if (s.endsWith("/")) s.dropRight(1) else s
+
+  def concatPath(path: String): IRI = IRI(s"${removeTailingSlash(uriStr)}/$path")
+
+  def normalize: IRI = IRI(innerUri.normalize())
+
+  override def toString: String = uriStr
 }
 
 object IRI {
