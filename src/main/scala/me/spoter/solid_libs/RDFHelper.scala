@@ -34,7 +34,7 @@ object RDFHelper {
   def ensureContainerExists(iri: IRI): Future[Unit] =
     for {
       res <- loadResource(iri)
-      _ <- res.fold(_ => createContainerResource(iri.baseIRI.innerUri, iri.lastPathComponent), Future(_))
+      _ <- res.fold(_ => createContainerResource(iri.parent.innerUri, iri.lastPathComponent), Future(_))
     } yield ()
 
   def loadResource(iri: IRI, forceLoad: Boolean = false): Future[Either[Throwable, js.Dynamic]] = {
@@ -82,7 +82,7 @@ object RDFHelper {
     load(sub, options).map(_ => b)
   }
 
-  private def getAll(sub: URI, prop: js.Dynamic): js.Array[js.Dynamic] =
+  def getAll(sub: URI, prop: js.Dynamic): js.Array[js.Dynamic] =
     store.each(RDFLib.sym(sub.toString), prop).asInstanceOf[js.Array[js.Dynamic]]
 
   def get(sub: URI, prop: js.Dynamic): js.Dynamic = store.any(RDFLib.sym(sub.toString), prop)

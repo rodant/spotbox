@@ -3,20 +3,24 @@ package me.spoter.routes
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.vdom.html_<^._
 import me.spoter.components.{Footer, TopNav}
-import me.spoter.pages.HomePage
+import me.spoter.models.IRI
+import me.spoter.pages.SPOTBox
 
 object AppRouter {
 
   sealed trait AppPage
 
-  case object Home extends AppPage
+  case class Explorer(iri: String = IRI.BlankNodeIRI.toString) extends AppPage {
+    lazy val dirIri: String = if (iri.endsWith("/")) iri else s"$iri/"
+  }
 
   private val config = RouterConfigDsl[AppPage].buildConfig { dsl =>
     import dsl._
 
     (trimSlashes
-      | staticRoute(root, Home) ~> render(HomePage()))
-      .notFound(redirectToPage(Home)(Redirect.Replace))
+      | staticRoute(root, Explorer()) ~> render(SPOTBox.Page(IRI.BlankNodeIRI.toString))
+      | dynamicRouteCT[Explorer]("#explorer?iri=" ~ string(".+").caseClass[Explorer]) ~> dynRender(p => SPOTBox.Page(p.dirIri)))
+      .notFound(redirectToPage(Explorer())(Redirect.Replace))
       .renderWith(layout)
   }
 

@@ -3,7 +3,7 @@ package me.spoter.components
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import me.spoter.components.bootstrap.{Nav, NavBar, NavBarBrand, NavBarCollapse, NavBarText, NavBarToggle, NavLink}
+import me.spoter.components.bootstrap._
 import me.spoter.components.solid.Value
 import me.spoter.{SessionTracker, StateXSession}
 
@@ -24,12 +24,15 @@ object TopNav extends SessionTracker[Unit, Unit, Unit] {
 
   private def render(stateXSession: StateXSession[Unit]): VdomElement = {
     val loggedIn = stateXSession.session.isDefined
-    NavBar(expand = "lg")(^.backgroundColor := "darkseagreen")(
-      NavBarBrand("#")("spoter.ME SPOTBox"),
+    NavBar(expand = "lg", bg = "dark", variant = "dark")(
+      NavBarBrand("#")(
+        <.div(^.display := "flex",
+          <.img(^.src := "public/spotbox/images/logo.png", ^.alt := "spoter.ME",
+            ^.className := "d-inline-block align-top", ^.width := 205.px, ^.height := 35.px))),
       NavBarToggle()(^.aria.controls := "basic-navbar-nav"),
       NavBarCollapse()(^.id := "basic-navbar-nav")(
         Nav()(^.className := "mr-auto")(
-          NavLink(href = "#bookmarks")("Bookmarks")),
+          NavLink(href = "#bookmarks")("Lesezeichen")),
         Nav()(^.id := "login-button",
           NavBarText()(^.id := "logged-in-user", ^.className := "ui-elem", Value("user.name")).when(loggedIn),
           <.div(^.id := "login-button", AuthButton("https://solid.community/common/popup.html", loggedIn = loggedIn)))))
