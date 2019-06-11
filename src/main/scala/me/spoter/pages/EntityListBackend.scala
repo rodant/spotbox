@@ -79,8 +79,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
     }
 
     val pathCompIriPairs = props.iri.normalize match {
-        //TODO: define function in IRI to get the root directory
-      case IRI.BlankNodeIRI => List(("", IRI(sxs.session.get.webId).parent.parent))
+      case IRI.BlankNodeIRI => List(("", IRI(sxs.session.get.webId).root))
       case iri => toCompAndIRIs((iri.lastPathComponent, iri) :: Nil)
     }
 

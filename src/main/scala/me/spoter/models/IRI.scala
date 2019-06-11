@@ -18,6 +18,8 @@ case class IRI(private val sourceUri: URI) {
     case a => a
   }
 
+  lazy val root: IRI = IRI.root(this)
+
   lazy val parent: IRI = if (endOfBaseUri > -1) IRI(uriStr.substring(0, endOfBaseUri + 1)) else this
 
   lazy val lastPathComponent: String = removeTailingSlash(uriStr.substring(endOfBaseUri + 1))
@@ -37,4 +39,9 @@ object IRI {
   val BlankNodeIRI = IRI("_blank")
 
   def apply(uriStr: String): IRI = IRI(URI.create(uriStr))
+
+  def root(iri: IRI): IRI = iri.parent match {
+    case p if p == iri => iri
+    case p => root(p)
+  }
 }

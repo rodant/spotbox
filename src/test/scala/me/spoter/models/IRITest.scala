@@ -38,4 +38,18 @@ class IRITest extends FunSuite {
     assertResult("level0", "Wrong in case of no tailing slash!")(
       IRI("https://example.com/level0/").lastPathComponent)
   }
+
+  test("root") {
+    val iri = IRI("https://example.com/level0")
+    assertResult(IRI("https://example.com/"), "Wrong root for 1 level")(iri.root)
+
+    assertResult(IRI("https://example.com/"), "Wrong root for 2 levels")(
+      IRI("https://example.com/level0/level1").root)
+
+    assertResult(IRI("example.com/"), "Wrong root for 2 levels")(
+      IRI("example.com/level0/level1").root)
+
+    assertResult(IRI("/"), "Wrong root for 2 levels")(IRI("/level0/level1").root)
+    assertResult(IRI("level0/"), "Wrong root for 2 levels")(IRI("level0/level1").root)
+  }
 }
