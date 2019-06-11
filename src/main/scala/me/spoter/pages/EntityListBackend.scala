@@ -58,7 +58,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
           Row()(
             Form(validated = true)(^.noValidate := true)(
               WithConfirmAndCancel(() => onConfirm(), () => onCancel())(
-                FormControl(value = e.name, onChange = onChangeName(_))(
+                FormControl(value = e.name, size = "sm", onChange = onChangeName(_))(
                   ^.placeholder := "Name", ^.autoFocus := true, ^.required := true, ^.maxLength := 40,
                   ^.onKeyUp ==> handleKey)(),
               )
@@ -79,6 +79,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
     }
 
     val pathCompIriPairs = props.iri.normalize match {
+        //TODO: define function in IRI to get the root directory
       case IRI.BlankNodeIRI => List(("", IRI(sxs.session.get.webId).parent.parent))
       case iri => toCompAndIRIs((iri.lastPathComponent, iri) :: Nil)
     }
@@ -95,11 +96,8 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
     )
   }
 
-  private def onConfirm(): Callback = bs.state.zip(bs.props).flatMap[Unit] { case (state, props) =>
-    if (state.state.newEntity.get.name.isEmpty)
-      Callback()
-    else
-      createEntity(props, state)
+  private def onConfirm(): Callback = bs.state.zip(bs.props).flatMap[Unit] { case (sxs, props) =>
+    sxs.state.newEntity.fold(Callback.empty)(_ => createEntity(props, sxs))
   }
 
   private def onCancel(): Callback = bs.modState(old => old.copy(state = old.state.copy(newEntity = None)))

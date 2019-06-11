@@ -11,7 +11,7 @@ object AppRouter {
   sealed trait AppPage
 
   case class Explorer(iri: String = IRI.BlankNodeIRI.toString) extends AppPage {
-    lazy val dirIri: String = if (iri.endsWith("/")) iri else s"$iri/"
+    lazy val dirIri: String = IRI(if (iri.endsWith("/")) iri else s"$iri/").normalize.toString
   }
 
   private val config = RouterConfigDsl[AppPage].buildConfig { dsl =>
