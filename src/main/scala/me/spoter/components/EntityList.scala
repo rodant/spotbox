@@ -28,7 +28,7 @@ object EntityList {
     val uriFragment = $.props.entityUriFragment
     val folderIcon = <.i(^.alignSelf := "center", ^.color := "#F97B", ^.className := "fas fa-folder fa-2x")
     val fileIcon = <.i(^.alignSelf := "center", ^.color := "#0009", ^.className := "far fa-file-alt fa-2x")
-    <.div(
+    <.div(^.key := e.name,
       Row()(
         Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
           <.div(^.display := "flex",
