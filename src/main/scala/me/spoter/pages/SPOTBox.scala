@@ -22,7 +22,7 @@ object SPOTBox {
     override protected def newEntity(): Resource = Resource(name = "")
 
     override protected def createEntity(props: Props, sxs: StateXSession[State]): Callback = Callback.future {
-      val createdResourceF = Future.successful()
+      val createdResourceF = ResourceService.createFolder(props.iri, sxs.state.newEntity.get.name)
       createdResourceF.flatMap { _ =>
         fetchEntities(props, sxs.session.get, forceLoad = true).map(s => bs.modState(_.copy(state = s)))
       }
@@ -39,7 +39,7 @@ object SPOTBox {
 
     private[pages] def fetchEntities(props: Props, s: Session, forceLoad: Boolean = false): Future[State] = {
       val effectiveIRI = if (props.iri == IRI.BlankNodeIRI) IRI(s.webId).parent.parent else props.iri
-      ResourceService.listFolder(effectiveIRI).map { rs =>
+      ResourceService.listFolder(effectiveIRI, forceLoad = forceLoad).map { rs =>
         val resourceOrd = new Ordering[Resource] {
           override def compare(x: Resource, y: Resource): Int = (x, y) match {
             case (Resource(_, _, true), Resource(_, _, false)) => -1

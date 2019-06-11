@@ -7,8 +7,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object ResourceService {
-  def listFolder(iri: IRI, showHidden: Boolean = false): Future[Seq[Resource]] = {
-    RDFHelper.listDir(iri.innerUri)
+  def createFolder(iri: IRI, name: String): Future[Unit] =
+    RDFHelper.createContainerResource(iri.innerUri, name).map(_ => ())
+
+  def listFolder(iri: IRI, showHidden: Boolean = false, forceLoad: Boolean = false): Future[Seq[Resource]] = {
+    RDFHelper.listDir(iri.innerUri, forceLoad)
       .flatMap { us =>
         Future.traverse(us) { u =>
           RDFHelper.loadEntity(u) {

@@ -26,7 +26,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
         Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
           <.div(^.display := "flex",
             <.i(^.color := "#F97B", ^.alignSelf := "center", ^.className := "fas fa-folder-open fa-2x ui-elem"),
-            <.div(^.display := "flex", renderBreadcrumb(props))
+            <.div(^.display := "flex", renderBreadcrumb(props, sxs))
           )
         ),
         Col()(
@@ -56,9 +56,9 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
       sxs.session.flatMap { _ =>
         sxs.state.newEntity.map { e =>
           Row()(
-            Form(validated = true)(^.noValidate := true)(
-              WithConfirmAndCancel(() => onConfirm(), () => onCancel())(
-                FormControl(value = e.name, onChange = onChangeName(_))(
+            Form(validated = true)(^.noValidate := true, ^.onSubmit ==> dismissOnSubmit)(
+              WithConfirmAndCancel(() => onConfirm(), () => onCancel(), show = false)(
+                FormControl(value = e.name, size = "sm", onChange = onChangeName(_))(
                   ^.placeholder := "Name", ^.autoFocus := true, ^.required := true, ^.maxLength := 40,
                   ^.onKeyUp ==> handleKey)(),
               )
@@ -72,34 +72,31 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
     )
   }
 
-  private def renderBreadcrumb(props: SPOTBox.Props): VdomElement = {
+  private def renderBreadcrumb(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     def toCompAndIRIs(cis: List[(String, IRI)]): List[(String, IRI)] = cis match {
-      case (c, iri) :: _ if iri == iri.parent => cis
+      case (_, iri) :: _ if iri == iri.parent => cis
       case (_, iri) :: _ => toCompAndIRIs((iri.parent.lastPathComponent, iri.parent) :: cis)
     }
 
     val pathCompIriPairs = props.iri.normalize match {
-      case IRI.BlankNodeIRI => List.empty[(String, IRI)]
+      case IRI.BlankNodeIRI => List(("", IRI(sxs.session.get.webId).root))
       case iri => toCompAndIRIs((iri.lastPathComponent, iri) :: Nil)
     }
 
     Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(
       pathCompIriPairs.zipWithIndex.toVdomArray {
-        case (("", iri), 0) =>
+        case ((pc, iri), 0) =>
           BreadcrumbItem(active = pathCompIriPairs.size == 1, href = s"#$entityUriFragment?iri=$iri")(
-            <.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em"))
+            ^.key := iri.toString)(<.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em"))
         case ((pc, iri), ind) =>
           BreadcrumbItem(active = ind == pathCompIriPairs.length - 1, href = s"#$entityUriFragment?iri=$iri")(
-            <.i(^.alignSelf := "center", pc))
+            ^.key := iri.toString)(<.i(^.alignSelf := "center", pc))
       }
     )
   }
 
-  private def onConfirm(): Callback = bs.state.zip(bs.props).flatMap[Unit] { case (state, props) =>
-    if (state.state.newEntity.get.name.isEmpty)
-      Callback()
-    else
-      createEntity(props, state)
+  private def onConfirm(): Callback = bs.state.zip(bs.props).flatMap[Unit] { case (sxs, props) =>
+    sxs.state.newEntity.fold(Callback.empty)(_ => createEntity(props, sxs))
   }
 
   private def onCancel(): Callback = bs.modState(old => old.copy(state = old.state.copy(newEntity = None)))
@@ -115,7 +112,5 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
   }
 
   private def handleKey(e: ReactKeyboardEvent): Callback =
-  //TODO: the enter key in the name field is causing a weird runtime error, but this code is correct.
-  //Check later on if the error persists.
     handleEsc(onCancel).orElse(handleEnter(onConfirm)).orElse(ignoreKey)(e.keyCode)
 }
