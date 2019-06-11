@@ -26,7 +26,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
         Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
           <.div(^.display := "flex",
             <.i(^.color := "#F97B", ^.alignSelf := "center", ^.className := "fas fa-folder-open fa-2x ui-elem"),
-            <.div(^.display := "flex", renderBreadcrumb(props))
+            <.div(^.display := "flex", renderBreadcrumb(props, sxs))
           )
         ),
         Col()(
@@ -72,14 +72,14 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
     )
   }
 
-  private def renderBreadcrumb(props: SPOTBox.Props): VdomElement = {
+  private def renderBreadcrumb(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     def toCompAndIRIs(cis: List[(String, IRI)]): List[(String, IRI)] = cis match {
-      case (c, iri) :: _ if iri == iri.parent => cis
+      case (_, iri) :: _ if iri == iri.parent => cis
       case (_, iri) :: _ => toCompAndIRIs((iri.parent.lastPathComponent, iri.parent) :: cis)
     }
 
     val pathCompIriPairs = props.iri.normalize match {
-      case IRI.BlankNodeIRI => List.empty[(String, IRI)]
+      case IRI.BlankNodeIRI => List(("", IRI(sxs.session.get.webId).parent.parent))
       case iri => toCompAndIRIs((iri.lastPathComponent, iri) :: Nil)
     }
 
