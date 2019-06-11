@@ -1,6 +1,6 @@
 package me.spoter
 
-import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.{Callback, ReactEventFromInput}
 import org.scalajs.dom.ext.KeyCode
 
 package object components {
@@ -15,5 +15,7 @@ package object components {
   val ignoreKey: PartialFunction[Int, Callback] = {
     case _ => Callback()
   }
+
+  val dismissOnSubmit: ReactEventFromInput => Callback = e => Callback(e.preventDefault())
 
 }
