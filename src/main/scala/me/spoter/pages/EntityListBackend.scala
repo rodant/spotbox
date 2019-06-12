@@ -32,19 +32,15 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
         Col()(
           <.div(^.display := "flex", ^.height := "100%",
             renderWhen(sxs.session.isDefined) {
-              <.i(^.className := "fas fa-folder-plus ui-elem",
+              <.i(^.className := "fas fa-folder-plus ui-elem action-icon",
                 ^.title := "Neuer Ordner",
                 ^.alignSelf := "center",
-                ^.fontSize := "1.3em",
-                ^.cursor := "pointer",
                 ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
             },
             renderWhen(sxs.session.isDefined) {
-              <.i(^.className := "fas fa-file-upload ui-elem",
+              <.i(^.className := "fas fa-file-upload ui-elem action-icon",
                 ^.title := "Datei hochladen",
                 ^.alignSelf := "center",
-                ^.fontSize := "1.3em",
-                ^.cursor := "pointer",
                 ^.onClick --> Callback.empty)
             }
           )

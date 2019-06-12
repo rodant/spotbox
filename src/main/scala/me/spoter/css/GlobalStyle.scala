@@ -22,6 +22,11 @@ object GlobalStyle extends StyleSheet.Inline {
     ),
     unsafeRoot(".form-group")(
       marginRight(50.px)
+    ),
+    unsafeRoot(".action-icon")(
+      fontSize(1.3.em),
+      color.rgb(108, 117, 125),
+      cursor.pointer,
     )
   )
 }
