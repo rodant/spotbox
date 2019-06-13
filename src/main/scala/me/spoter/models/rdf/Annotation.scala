@@ -1,4 +1,4 @@
-package me.spoter.rdf
+package me.spoter.models.rdf
 
 /**
   * RDF Annotation.

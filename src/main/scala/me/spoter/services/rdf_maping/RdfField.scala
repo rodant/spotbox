@@ -1,6 +1,6 @@
 package me.spoter.services.rdf_maping
 
-import me.spoter.rdf.RdfLiteral
+import me.spoter.models.rdf.RdfLiteral
 import me.spoter.solid_libs.RDFLib
 
 import scala.scalajs.js

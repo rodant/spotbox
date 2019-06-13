@@ -1,5 +1,6 @@
 package me.spoter.models
 
+import me.spoter.models.rdf.IRI
 import org.scalatest.FunSuite
 
 class IRITest extends FunSuite {

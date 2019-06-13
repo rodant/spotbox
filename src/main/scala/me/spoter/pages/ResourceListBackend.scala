@@ -5,19 +5,20 @@ import japgolly.scalajs.react.vdom.html_<^._
 import me.spoter.StateXSession
 import me.spoter.components._
 import me.spoter.components.bootstrap._
-import me.spoter.models.{IRI, Resource}
+import me.spoter.models.{Folder, FSResource}
+import me.spoter.models.rdf.IRI
 
-case class State(es: Iterable[Resource], newEntity: Option[Resource] = None)
+case class State(es: Iterable[FSResource], newFSResource: Option[FSResource] = None)
 
-abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[State]]) {
-  protected val entityUriFragment: String
-  protected val entityRenderName: String
+abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[State]]) {
+  protected val resourceUriFragment: String
+  protected val resourceRenderName: String
 
-  protected val deleteEntity: Option[Resource => Callback] = None
+  protected val deleteFSResource: Option[FSResource => Callback] = None
 
-  protected def newEntity(): Resource
+  protected def newFolder(): Folder
 
-  protected def createEntity(props: SPOTBox.Props, sxs: StateXSession[State]): Callback
+  protected def createFSResource(props: SPOTBox.Props, sxs: StateXSession[State]): Callback
 
   def render(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     val es = sxs.state.es
@@ -35,7 +36,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
               <.i(^.className := "fas fa-folder-plus ui-elem action-icon",
                 ^.title := "Neuer Ordner",
                 ^.alignSelf := "center",
-                ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newEntity = Option(newEntity())))))
+                ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newFSResource = Option(newFolder())))))
             },
             renderWhen(sxs.session.isDefined) {
               <.i(^.className := "fas fa-file-upload ui-elem action-icon",
@@ -50,7 +51,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
         <.h2("Bitte einloggen!")
       },
       sxs.session.flatMap { _ =>
-        sxs.state.newEntity.map { e =>
+        sxs.state.newFSResource.map { e =>
           Row()(
             Form(validated = true)(^.noValidate := true, ^.onSubmit ==> dismissOnSubmit)(
               WithConfirmAndCancel(() => onConfirm(), () => onCancel(), show = false)(
@@ -63,7 +64,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
         }
       },
       renderWhen(sxs.session.isDefined) {
-        EntityList(entityUriFragment, es, deleteEntity)
+        ResourceList(resourceUriFragment, es, deleteFSResource)
       }
     )
   }
@@ -81,21 +82,21 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
 
     Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(
       pathCompIriPairs.zipWithIndex.toVdomArray {
-        case ((pc, iri), 0) =>
-          BreadcrumbItem(active = pathCompIriPairs.size == 1, href = s"#$entityUriFragment?iri=$iri")(
+        case ((_, iri), 0) =>
+          BreadcrumbItem(active = pathCompIriPairs.size == 1, href = s"#$resourceUriFragment?iri=$iri")(
             ^.key := iri.toString)(<.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em"))
         case ((pc, iri), ind) =>
-          BreadcrumbItem(active = ind == pathCompIriPairs.length - 1, href = s"#$entityUriFragment?iri=$iri")(
+          BreadcrumbItem(active = ind == pathCompIriPairs.length - 1, href = s"#$resourceUriFragment?iri=$iri")(
             ^.key := iri.toString)(<.i(^.alignSelf := "center", pc))
       }
     )
   }
 
   private def onConfirm(): Callback = bs.state.zip(bs.props).flatMap[Unit] { case (sxs, props) =>
-    sxs.state.newEntity.fold(Callback.empty)(_ => createEntity(props, sxs))
+    sxs.state.newFSResource.fold(Callback.empty)(_ => createFSResource(props, sxs))
   }
 
-  private def onCancel(): Callback = bs.modState(old => old.copy(state = old.state.copy(newEntity = None)))
+  private def onCancel(): Callback = bs.modState(old => old.copy(state = old.state.copy(newFSResource = None)))
 
   private def renderWhen(b: Boolean)(r: => VdomElement): Option[VdomElement] = if (b) Some(r) else None
 
@@ -103,8 +104,8 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
     e.persist()
     bs.modState(old =>
       old.copy(state =
-        old.state.copy(newEntity =
-          old.state.newEntity.map(g => g.withNewName(e.target.value)))))
+        old.state.copy(newFSResource =
+          old.state.newFSResource.map(g => g.withNewName(e.target.value)))))
   }
 
   private def handleKey(e: ReactKeyboardEvent): Callback =

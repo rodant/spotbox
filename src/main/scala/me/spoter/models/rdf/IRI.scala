@@ -1,4 +1,4 @@
-package me.spoter.models
+package me.spoter.models.rdf
 
 import java.net.URI
 

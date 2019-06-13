@@ -3,7 +3,7 @@ package me.spoter.routes
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.vdom.html_<^._
 import me.spoter.components.{Footer, TopNav}
-import me.spoter.models.IRI
+import me.spoter.models.rdf.IRI
 import me.spoter.pages.SPOTBox
 
 object AppRouter {
