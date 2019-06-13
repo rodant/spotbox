@@ -40,11 +40,13 @@ object EntityList {
           <.i(^.className := "fas fa-file-download ui-elem action-icon",
             ^.title := "Download",
             ^.onClick --> Callback.empty),
-          <.i(^.className := "far fa-trash-alt ui-elem action-icon",
-            ^.title := "Löschen",
-            ^.marginTop := 10.px,
-            ^.onClick --> $.modState(_.copy(entityToDelete = Some(e)))),
-        ).when($.props.deleteHandler.isDefined)
+          $.props.deleteHandler.map { _ =>
+            <.i(^.className := "far fa-trash-alt ui-elem action-icon",
+              ^.title := "Löschen",
+              ^.marginTop := 10.px,
+              ^.onClick --> $.modState(_.copy(entityToDelete = Some(e))))
+          }
+        )
       )
     )
   }
