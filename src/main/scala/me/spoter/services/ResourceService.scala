@@ -28,10 +28,10 @@ object ResourceService {
       }
   }
 
-  def deleteResource(iri: IRI): Future[js.Object] = {
-    RDFHelper.deleteResource(iri).andThen {
+  def deleteResource(r: Resource): Future[js.Object] = {
+    RDFHelper.deleteResource(r.iri).andThen {
       case Success(res) =>
-        RDFHelper.reloadAndSync(iri.parent)
+        RDFHelper.reloadAndSync(r.iri.parent)
         res
     }
   }

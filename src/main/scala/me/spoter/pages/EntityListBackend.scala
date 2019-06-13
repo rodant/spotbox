@@ -13,7 +13,7 @@ abstract class EntityListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[S
   protected val entityUriFragment: String
   protected val entityRenderName: String
 
-  protected val deleteEntity: Option[IRI => Callback] = None
+  protected val deleteEntity: Option[Resource => Callback] = None
 
   protected def newEntity(): Resource
 

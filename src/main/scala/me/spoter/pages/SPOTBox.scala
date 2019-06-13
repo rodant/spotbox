@@ -28,10 +28,10 @@ object SPOTBox {
       }
     }
 
-    override protected val deleteEntity: Option[IRI => Callback] = Some { iri =>
+    override protected val deleteEntity: Option[Resource => Callback] = Some { iri =>
       Callback.future {
         ResourceService.deleteResource(iri).map { _ =>
-          bs.modState(old => old.copy(state = old.state.copy(es = old.state.es.filter(_.iri != iri))))
+          bs.modState(old => old.copy(state = old.state.copy(es = old.state.es.filter(_.iri != iri.iri))))
         }
       }
     }

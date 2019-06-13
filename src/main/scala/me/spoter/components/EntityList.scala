@@ -4,11 +4,11 @@ import japgolly.scalajs.react.component.builder.Lifecycle
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ReactEventFromInput, ScalaComponent}
 import me.spoter.components.bootstrap._
-import me.spoter.models.{BlankNodeEntity, IRI, Resource}
+import me.spoter.models.Resource
 
 object EntityList {
 
-  case class Props(entityUriFragment: String, es: Iterable[Resource], deleteHandler: Option[IRI => Callback])
+  case class Props(entityUriFragment: String, es: Iterable[Resource], deleteHandler: Option[Resource => Callback])
 
   case class State(entityToDelete: Option[Resource] = None)
 
@@ -21,7 +21,7 @@ object EntityList {
         renderConfirmDeletion($))))
     .build
 
-  def apply(entityUriFragment: String, es: Iterable[Resource], deleteHandler: Option[IRI => Callback] = None): VdomElement =
+  def apply(entityUriFragment: String, es: Iterable[Resource], deleteHandler: Option[Resource => Callback] = None): VdomElement =
     component(Props(entityUriFragment, es, deleteHandler)).vdomElement
 
   private def renderEntity($: Lifecycle.RenderScope[Props, State, Unit])(e: Resource): VdomElement = {
@@ -53,15 +53,14 @@ object EntityList {
 
   private def renderConfirmDeletion($: Lifecycle.RenderScope[Props, State, Unit]): VdomElement = {
     val close = (_: Unit) => $.modState(_.copy(entityToDelete = None))
-    val entityToDelete = $.state.entityToDelete.getOrElse(BlankNodeEntity)
+    val entityToDelete = $.state.entityToDelete.getOrElse(Resource.BlankResource)
 
     def confirmDeletion(e: ReactEventFromInput): Callback = {
       val deleteHandler = $.props.deleteHandler.get
-      val iri = entityToDelete.iri
-      deleteHandler(iri).flatMap(close)
+      deleteHandler(entityToDelete).flatMap(close)
     }
 
-    Modal(size = "sm", show = entityToDelete != BlankNodeEntity, onHide = close)(
+    Modal(size = "sm", show = entityToDelete != Resource.BlankResource, onHide = close)(
       ModalHeader(closeButton = true)(
         ModalTitle()("Ressource Entfernen")
       ),
