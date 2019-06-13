@@ -30,8 +30,7 @@ object SPOTBox {
 
     override protected val deleteEntity: Option[IRI => Callback] = Some { iri =>
       Callback.future {
-        val deletedF = Future.successful()
-        deletedF.map { _ =>
+        ResourceService.deleteResource(iri).map { _ =>
           bs.modState(old => old.copy(state = old.state.copy(es = old.state.es.filter(_.iri != iri))))
         }
       }

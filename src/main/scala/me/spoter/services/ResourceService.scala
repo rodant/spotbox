@@ -5,6 +5,8 @@ import me.spoter.solid_libs.RDFHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.scalajs.js
+import scala.util.Success
 
 object ResourceService {
   def createFolder(iri: IRI, name: String): Future[Unit] =
@@ -24,6 +26,14 @@ object ResourceService {
           }
         }.map(_.filter(r => r != Resource.BlankResource && (if (showHidden) true else !r.isHidden)))
       }
+  }
+
+  def deleteResource(iri: IRI): Future[js.Object] = {
+    RDFHelper.deleteResource(iri).andThen {
+      case Success(res) =>
+        RDFHelper.reloadAndSync(iri.parent)
+        res
+    }
   }
 }
 
