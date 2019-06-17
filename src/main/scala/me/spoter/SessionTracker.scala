@@ -4,7 +4,7 @@ import java.net.URI
 
 import japgolly.scalajs.react.{Callback, Reusability}
 import japgolly.scalajs.react.component.builder.Lifecycle.ComponentDidMount
-import me.spoter.models.IRI
+import me.spoter.models.rdf.IRI
 import me.spoter.solid_libs.SolidAuth
 
 import scala.concurrent.ExecutionContext.Implicits.global

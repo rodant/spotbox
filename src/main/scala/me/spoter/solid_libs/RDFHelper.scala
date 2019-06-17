@@ -2,8 +2,7 @@ package me.spoter.solid_libs
 
 import java.net.URI
 
-import me.spoter.models.IRI
-import me.spoter.rdf.RdfLiteral
+import me.spoter.models.rdf.{IRI, RdfLiteral}
 import org.scalajs.dom.ext.Ajax.InputData
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -116,7 +115,7 @@ object RDFHelper {
     val p = Promise[Unit]()
     val callback = (uri: UndefOr[String], success: Boolean, error: UndefOr[String]) => {
       if (success) {
-        p.success()
+        p.success(())
       } else {
         p.failure(new Exception(error.get))
       }

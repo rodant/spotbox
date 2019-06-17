@@ -4,7 +4,8 @@ import japgolly.scalajs.react.component.Scala.BackendScope
 import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceiveProps
 import japgolly.scalajs.react.vdom.VdomElement
 import japgolly.scalajs.react.{Callback, Reusability, ScalaComponent}
-import me.spoter.models.{IRI, Resource}
+import me.spoter.models.rdf.IRI
+import me.spoter.models.{FSResource, File, Folder}
 import me.spoter.services.ResourceService
 import me.spoter.{Session, SessionTracker, StateXSession}
 
@@ -15,24 +16,23 @@ object SPOTBox {
 
   case class Props(iri: IRI)
 
-  class Backend(bs: BackendScope[Props, StateXSession[State]]) extends EntityListBackend(bs) {
-    override protected val entityUriFragment: String = "explorer"
-    override protected val entityRenderName: String = "Ressources"
+  class Backend(bs: BackendScope[Props, StateXSession[State]]) extends ResourceListBackend(bs) {
+    override protected val resourceUriFragment: String = "explorer"
+    override protected val resourceRenderName: String = "Ressources"
 
-    override protected def newEntity(): Resource = Resource(name = "")
+    override protected def newFolder(): Folder = Folder()
 
-    override protected def createEntity(props: Props, sxs: StateXSession[State]): Callback = Callback.future {
-      val createdResourceF = ResourceService.createFolder(props.iri, sxs.state.newEntity.get.name)
+    override protected def createFSResource(props: Props, sxs: StateXSession[State]): Callback = Callback.future {
+      val createdResourceF = ResourceService.createFolder(props.iri, sxs.state.newFSResource.get.name)
       createdResourceF.flatMap { _ =>
         fetchEntities(props, sxs.session.get, forceLoad = true).map(s => bs.modState(_.copy(state = s)))
       }
     }
 
-    override protected val deleteEntity: Option[IRI => Callback] = Some { iri =>
+    override protected val deleteFSResource: Option[FSResource => Callback] = Some { resource =>
       Callback.future {
-        val deletedF = Future.successful()
-        deletedF.map { _ =>
-          bs.modState(old => old.copy(state = old.state.copy(es = old.state.es.filter(_.iri != iri))))
+        ResourceService.deleteResource(resource).map { _ =>
+          bs.modState(old => old.copy(state = old.state.copy(rs = old.state.rs.filter(_.iri != resource.iri))))
         }
       }
     }
@@ -40,11 +40,11 @@ object SPOTBox {
     private[pages] def fetchEntities(props: Props, s: Session, forceLoad: Boolean = false): Future[State] = {
       val effectiveIRI = if (props.iri == IRI.BlankNodeIRI) IRI(s.webId).parent.parent else props.iri
       ResourceService.listFolder(effectiveIRI, forceLoad = forceLoad).map { rs =>
-        val resourceOrd = new Ordering[Resource] {
-          override def compare(x: Resource, y: Resource): Int = (x, y) match {
-            case (Resource(_, _, true), Resource(_, _, false)) => -1
-            case (Resource(_, _, false), Resource(_, _, true)) => 1
-            case (Resource(_, nx, _), Resource(_, ny, _)) => Ordering.String.compare(nx, ny)
+        val resourceOrd = new Ordering[FSResource] {
+          override def compare(x: FSResource, y: FSResource): Int = (x, y) match {
+            case (Folder(_, _), File(_, _)) => -1
+            case (File(_, _), Folder(_, _)) => 1
+            case (e1, e2) => Ordering.by((e: FSResource) => e.name).compare(e1, e2)
           }
         }
 

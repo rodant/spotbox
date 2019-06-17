@@ -13,7 +13,7 @@ package object components {
   }
 
   val ignoreKey: PartialFunction[Int, Callback] = {
-    case _ => Callback()
+    case _ => Callback(())
   }
 
   val dismissOnSubmit: ReactEventFromInput => Callback = e => Callback(e.preventDefault())

@@ -13,6 +13,8 @@ lazy val root = (project in file(".")).
     scalacOptions += "-feature",
     scalacOptions += "-language:higherKinds",
     scalacOptions += "-Ypartial-unification",
+    scalacOptions += "-Xfatal-warnings",
+    scalacOptions += "-deprecation",
     scalaJSUseMainModuleInitializer := true,
     // creates single js resource file for easy integration in html page
     skip in packageJSDependencies := false,

@@ -15,7 +15,7 @@ object TopNav extends SessionTracker[Unit, Unit, Unit] {
     .builder[Unit]("TopNav")
     .initialState(StateXSession((), None))
     .render_S(render)
-    .componentDidMount(trackSessionOn(_ => Future()))
+    .componentDidMount(trackSessionOn(_ => Future(())))
     .componentWillUnmountConst(trackSessionOff())
     .configure(Reusability.shouldComponentUpdate)
     .build
