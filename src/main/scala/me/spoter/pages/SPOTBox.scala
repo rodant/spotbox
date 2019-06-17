@@ -29,10 +29,10 @@ object SPOTBox {
       }
     }
 
-    override protected val deleteFSResource: Option[FSResource => Callback] = Some { iri =>
+    override protected val deleteFSResource: Option[FSResource => Callback] = Some { resource =>
       Callback.future {
-        ResourceService.deleteResource(iri).map { _ =>
-          bs.modState(old => old.copy(state = old.state.copy(es = old.state.es.filter(_.iri != iri.iri))))
+        ResourceService.deleteResource(resource).map { _ =>
+          bs.modState(old => old.copy(state = old.state.copy(rs = old.state.rs.filter(_.iri != resource.iri))))
         }
       }
     }

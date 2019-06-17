@@ -8,7 +8,7 @@ import me.spoter.components.bootstrap._
 import me.spoter.models.{Folder, FSResource}
 import me.spoter.models.rdf.IRI
 
-case class State(es: Iterable[FSResource], newFSResource: Option[FSResource] = None)
+case class State(rs: Iterable[FSResource], newFSResource: Option[FSResource] = None)
 
 abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[State]]) {
   protected val resourceUriFragment: String
@@ -21,7 +21,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
   protected def createFSResource(props: SPOTBox.Props, sxs: StateXSession[State]): Callback
 
   def render(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
-    val es = sxs.state.es
+    val rs = sxs.state.rs
     Container(
       Row()(^.borderBottom := "1px lightgrey solid", ^.paddingBottom := 5.px)(
         Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
@@ -64,7 +64,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
         }
       },
       renderWhen(sxs.session.isDefined) {
-        ResourceList(resourceUriFragment, es, deleteFSResource)
+        ResourceList(resourceUriFragment, rs, deleteFSResource)
       }
     )
   }
