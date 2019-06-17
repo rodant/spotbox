@@ -5,7 +5,7 @@ import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceivePr
 import japgolly.scalajs.react.vdom.VdomElement
 import japgolly.scalajs.react.{Callback, Reusability, ScalaComponent}
 import me.spoter.models.rdf.IRI
-import me.spoter.models.{File, Folder, FSResource}
+import me.spoter.models.{FSResource, File, Folder}
 import me.spoter.services.ResourceService
 import me.spoter.{Session, SessionTracker, StateXSession}
 
@@ -20,7 +20,7 @@ object SPOTBox {
     override protected val resourceUriFragment: String = "explorer"
     override protected val resourceRenderName: String = "Ressources"
 
-    override protected def newFolder(): Folder = Folder(name = "")
+    override protected def newFolder(): Folder = Folder()
 
     override protected def createFSResource(props: Props, sxs: StateXSession[State]): Callback = Callback.future {
       val createdResourceF = ResourceService.createFolder(props.iri, sxs.state.newFSResource.get.name)
