@@ -109,5 +109,5 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
   }
 
   private def handleKey(e: ReactKeyboardEvent): Callback =
-    handleEsc(onCancel).orElse(handleEnter(onConfirm)).orElse(ignoreKey)(e.keyCode)
+    handleEsc(onCancel _).orElse(handleEnter(onConfirm _)).orElse(ignoreKey)(e.keyCode)
 }

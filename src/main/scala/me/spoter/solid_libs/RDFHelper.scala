@@ -115,7 +115,7 @@ object RDFHelper {
     val p = Promise[Unit]()
     val callback = (uri: UndefOr[String], success: Boolean, error: UndefOr[String]) => {
       if (success) {
-        p.success()
+        p.success(())
       } else {
         p.failure(new Exception(error.get))
       }

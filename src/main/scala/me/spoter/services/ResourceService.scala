@@ -34,7 +34,7 @@ object ResourceService {
     def delete(iri: IRI): Future[Unit] = RDFHelper.deleteResource(iri).map(_ => RDFHelper.reloadAndSync(iri.parent))
 
     r match {
-      case BlankNodeFSResource => Future()
+      case BlankNodeFSResource => Future(())
       case File(iri, _) => delete(iri)
       case Folder(iri, _) =>
         for {
