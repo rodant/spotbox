@@ -5,8 +5,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import me.spoter.StateXSession
 import me.spoter.components._
 import me.spoter.components.bootstrap._
-import me.spoter.models.{Folder, FSResource}
 import me.spoter.models.rdf.IRI
+import me.spoter.models.{FSResource, Folder}
 
 case class State(rs: Iterable[FSResource], newFSResource: Option[FSResource] = None)
 
@@ -76,7 +76,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
     }
 
     val pathCompIriPairs = props.iri.normalize match {
-      case IRI.BlankNodeIRI => List(("", IRI(sxs.session.get.webId).root))
+      case IRI.BlankNodeIRI => List(("", IRI(sxs.session.fold(IRI.BlankNodeIRI.innerUri)(_.webId)).root))
       case iri => toCompAndIRIs((iri.lastPathComponent, iri) :: Nil)
     }
 
@@ -84,7 +84,8 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
       pathCompIriPairs.zipWithIndex.toVdomArray {
         case ((_, iri), 0) =>
           BreadcrumbItem(active = pathCompIriPairs.size == 1, href = s"#$resourceUriFragment?iri=$iri")(
-            ^.key := iri.toString)(<.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em"))
+            ^.key := iri.toString)(<.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em"),
+            <.i(^.marginLeft := "0.2em", "ME"))
         case ((pc, iri), ind) =>
           BreadcrumbItem(active = ind == pathCompIriPairs.length - 1, href = s"#$resourceUriFragment?iri=$iri")(
             ^.key := iri.toString)(<.i(^.alignSelf := "center", pc))
