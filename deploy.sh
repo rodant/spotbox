@@ -3,7 +3,7 @@
 set -o errexit -o nounset
 
 echo "Building App..."
-sbt test & sbt fullOptJS::webpack
+sbt test fullOptJS::webpack
 
 echo "Copying the App Bundle to public dir..."
 cp target/scala-2.12/scalajs-bundler/main/spotbox-opt-bundle.js public/spotbox/js/
