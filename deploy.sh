@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -o errexit -o nounset
+
 echo "Building App..."
 sbt test & sbt fullOptJS::webpack
 
