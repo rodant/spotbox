@@ -35,6 +35,6 @@ object TopNav extends SessionTracker[Unit, Unit, Unit] {
           NavLink(href = "#bookmarks")("Lesezeichen")),
         Nav()(^.id := "login-button",
           NavBarText()(^.id := "logged-in-user", ^.className := "ui-elem", Value("user.name")).when(loggedIn),
-          <.div(^.id := "login-button", AuthButton("https://solid.community/common/popup.html", loggedIn = loggedIn)))))
+          <.div(^.id := "login-button", AuthButton("https://solidcommunity.net/common/popup.html", loggedIn = loggedIn)))))
   }
 }
