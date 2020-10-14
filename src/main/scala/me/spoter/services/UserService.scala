@@ -23,16 +23,4 @@ object UserService {
       }
     }.flatten
   }
-
-  def fetchUsers(): Future[Seq[User]] = findWebIds().flatMap(webIds => Future.sequence(webIds.map(fetchUser)))
-
-  def findWebIds(): Future[Seq[URI]] = {
-    val usersUriPattern = URI.create("https://spoterme.solid.community/data/users*")
-    val platformUri = URI.create("https://spoterme.solid.community/profile/card#me")
-    val affiliation = RDFHelper.SCHEMA_ORG("affiliation")
-    RDFHelper.loadEntity(usersUriPattern) {
-      RDFHelper.statementsMatching(None, Some(affiliation), Some(platformUri), None)
-        .map(st => URI.create(st.subject.value.toString))
-    }
-  }
 }
