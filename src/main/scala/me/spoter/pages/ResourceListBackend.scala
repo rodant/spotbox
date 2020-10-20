@@ -7,6 +7,9 @@ import me.spoter.components._
 import me.spoter.components.bootstrap._
 import me.spoter.models.rdf.IRI
 import me.spoter.models.{FSResource, Folder}
+import me.spoter.services.ResourceService
+
+import scala.annotation.tailrec
 
 case class State(rs: Iterable[FSResource], newFSResource: Option[FSResource] = None)
 
@@ -70,20 +73,26 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
   }
 
   private def renderBreadcrumb(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
+    def parent(iri: IRI): IRI = if (ResourceService.isPod(iri) || iri == iri.parent) IRI.BlankNodeIRI else iri.parent
+
+    @tailrec
     def toCompAndIRIs(cis: List[(String, IRI)]): List[(String, IRI)] = cis match {
-      case (_, iri) :: _ if iri == iri.parent => cis
-      case (_, iri) :: _ => toCompAndIRIs((iri.parent.lastPathComponent, iri.parent) :: cis)
+      case Nil | (_, IRI.BlankNodeIRI) :: _ => cis
+      case (_, iri) :: _ =>
+        val (parentPathComp, parentIri) = (parent(iri).removedTailingSlash.toString, parent(iri))
+        toCompAndIRIs((parentPathComp, parentIri) :: cis)
     }
 
+    val rootIri = IRI(sxs.session.fold(IRI.BlankNodeIRI.innerUri)(_.webId)).root
     val pathCompIriPairs = props.iri.normalize match {
-      case IRI.BlankNodeIRI => List(("", IRI(sxs.session.fold(IRI.BlankNodeIRI.innerUri)(_.webId)).root))
-      case iri => toCompAndIRIs((iri.lastPathComponent, iri) :: Nil)
+      case iri@IRI.BlankNodeIRI => List((iri.toString, rootIri))
+      case iri => toCompAndIRIs((if (ResourceService.isPod(iri)) iri.removedTailingSlash.toString else iri.lastPathComponent, iri) :: Nil)
     }
 
     Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(
       pathCompIriPairs.zipWithIndex.toVdomArray {
         case ((_, iri), 0) =>
-          BreadcrumbItem(active = pathCompIriPairs.size == 1, href = s"#$resourceUriFragment?iri=$iri")(
+          BreadcrumbItem(active = pathCompIriPairs.size == 1, href = "/")(
             ^.key := iri.toString)(<.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em"),
             <.i(^.marginLeft := "0.2em", "ME"))
         case ((pc, iri), ind) =>

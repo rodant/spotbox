@@ -38,8 +38,8 @@ object SPOTBox {
     }
 
     private[pages] def fetchEntities(props: Props, s: Session, forceLoad: Boolean = false): Future[State] = {
-      val effectiveIRI = if (props.iri == IRI.BlankNodeIRI) IRI(s.webId).parent.parent else props.iri
-      ResourceService.listFolder(effectiveIRI, forceLoad = forceLoad).map { rs =>
+      val (effectiveIRI, isWebId) = if (props.iri == IRI.BlankNodeIRI) (IRI(s.webId), true) else (props.iri, false )
+      ResourceService.listFolder(effectiveIRI, isWebId = isWebId, forceLoad = forceLoad).map { rs =>
         val resourceOrd = new Ordering[FSResource] {
           override def compare(x: FSResource, y: FSResource): Int = (x, y) match {
             case (Folder(_, _), File(_, _)) => -1
