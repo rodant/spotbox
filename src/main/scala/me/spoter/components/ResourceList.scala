@@ -45,7 +45,7 @@ object ResourceList {
             ^.onClick --> Callback.empty),
           $.props.deleteHandler.map { _ =>
             <.i(^.className := "far fa-trash-alt ui-elem action-icon",
-              ^.title := "Löschen",
+              ^.title := "Delete",
               ^.marginTop := 10.px,
               ^.onClick --> $.modState(_.copy(resourceToDelete = Some(e))))
           }
@@ -65,18 +65,18 @@ object ResourceList {
 
     Modal(size = "sm", show = resourceToDelete != BlankNodeFSResource, onHide = close)(
       ModalHeader(closeButton = true)(
-        ModalTitle()("Ressource Entfernen")
+        ModalTitle()("Delete Resource")
       ),
       ModalBody()(
-        <.p(s"Wollen Sie wirklich ${resourceToDelete.name} löschen?"),
+        <.p(s"Do you really want to delete ${resourceToDelete.name}?"),
         resourceToDelete match {
           case Folder(_, name) =>
-            <.p(^.fontWeight.bold, s"$name ist ein Verzeichnis, alle Inhalte darunter werden gelöscht!")
+            <.p(^.fontWeight.bold, s"$name is a directory all contained resources will be deleted!")
           case _ => EmptyVdom
         }
       ),
       ModalFooter()(
-        Button(onClick = confirmDeletion(_))("Löschen")
+        Button(onClick = confirmDeletion(_))("Delete")
       )
     )
   }

@@ -22,9 +22,9 @@ object AuthButton {
   class Backend(bs: BackendScope[Props, Unit]) {
     def render(props: Props): VdomElement = {
       if (!props.loggedIn)
-        Button()(^.onClick --> login)("Einlogen")
+        Button()(^.onClick --> login)("Login")
       else
-        Button()(^.onClick --> logout)("Ausloggen")
+        Button()(^.onClick --> logout)("Logout")
     }
 
     private def login(): Callback = bs.props.map { p =>

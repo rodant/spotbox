@@ -37,13 +37,13 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
           <.div(^.display := "flex", ^.height := "100%",
             renderWhen(sxs.session.isDefined) {
               <.i(^.className := "fas fa-folder-plus ui-elem action-icon",
-                ^.title := "Neuer Ordner",
+                ^.title := "New Directory",
                 ^.alignSelf := "center",
                 ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newFSResource = Option(newFolder())))))
             },
             renderWhen(sxs.session.isDefined) {
               <.i(^.className := "fas fa-file-upload ui-elem action-icon",
-                ^.title := "Datei hochladen",
+                ^.title := "Upload file",
                 ^.alignSelf := "center",
                 ^.onClick --> Callback.empty)
             }
@@ -51,7 +51,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
         )
       ),
       renderWhen(sxs.session.isEmpty) {
-        <.h2("Bitte einloggen!")
+        <.h2("Please log in!")
       },
       sxs.session.flatMap { _ =>
         sxs.state.newFSResource.map { e =>
@@ -107,8 +107,6 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
   }
 
   private def onCancel(): Callback = bs.modState(old => old.copy(state = old.state.copy(newFSResource = None)))
-
-  private def renderWhen(b: Boolean)(r: => VdomElement): Option[VdomElement] = if (b) Some(r) else None
 
   private def onChangeName(e: ReactEventFromInput): Callback = {
     e.persist()
