@@ -114,7 +114,7 @@ object RDFHelper {
 
   private def doUpdate(delSts: Seq[js.Dynamic], st: Seq[js.Dynamic]): Future[Unit] = {
     val p = Promise[Unit]()
-    val callback = (uri: UndefOr[String], success: Boolean, error: UndefOr[String]) => {
+    val callback = (_: UndefOr[String], success: Boolean, error: UndefOr[String]) => {
       if (success) {
         p.success(())
       } else {
