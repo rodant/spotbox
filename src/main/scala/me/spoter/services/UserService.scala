@@ -27,7 +27,7 @@ object UserService {
       .andThen {
         case Success(user) => ResourceService.getSpotPod(user).flatMap {
           case Some(sp) if !user.pods.exists(_.removedTailingSlash == sp.removedTailingSlash) =>
-            ResourceService.addPodStatement(user, sp)
+            ResourceService.addPodStatement(user, sp.toString)
         }
       }
   }

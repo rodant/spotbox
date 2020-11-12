@@ -13,7 +13,7 @@ import me.spoter.{Session, SessionTracker, StateXSession}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class State(user: User, regDialogShown: Boolean = false, currentErrMessage: Option[String] = None)
+case class State(user: User, dialogShown: Boolean = false, podName: String = "", currentErrMessage: Option[String] = None)
 
 class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
   def render(stateXSession: StateXSession[State]): VdomElement = {
@@ -41,8 +41,9 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
   }
 
   private def renderDialog(stateXSession: StateXSession[State]): VdomElement = {
-    val hasSpotPod = ResourceService.getSpotPodFromStore(stateXSession.state.user).nonEmpty
-    Modal(size = "lg", show = stateXSession.state.regDialogShown, onHide = (_: Unit) => setDialogShownFlag(false))(
+    val (user, dialogShown, podName) = (stateXSession.state.user, stateXSession.state.dialogShown, stateXSession.state.podName)
+    val hasSpotPod = ResourceService.getSpotPodFromStore(user).nonEmpty
+    Modal(size = "lg", show = dialogShown, onHide = (_: Unit) => setDialogShownFlag(false))(
       ModalHeader(closeButton = true)(
         ModalTitle()(
           if (hasSpotPod) "Delete your POD from spoter.ME Server"
@@ -51,13 +52,21 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
       ModalBody()(
         if (hasSpotPod)
           <.p("You are about to delete your POD from the spoter.ME server. The POD must be empty, otherwise the operation will fail.")
-        else
-          <.p("You are about to create an own Solid POD on the spoter.ME server. Please fill out the next form and confirm.")
+        else {
+          <.div(
+            <.p("You are about to create an own Solid POD on the spoter.ME server. Please fill out the next form and confirm."),
+            Form(validated = true)(^.noValidate := true, ^.onSubmit ==> dismissOnSubmit)(
+              FormControl(value = podName, size = "sm", onChange = onChangeName(_))(
+                ^.placeholder := "POD Name", ^.autoFocus := true, ^.required := true, ^.minLength := 3, ^.maxLength := 40,
+                ^.onKeyUp ==> handleKey)()
+            )
+          )
+        }
       ),
       ModalFooter()(
         Button(variant = "secondary", onClick = (_: ReactEventFromInput) => setDialogShownFlag(false))("Cancel"),
-        if (hasSpotPod) Button(onClick = confirmPodDeletion(stateXSession.state.user)(_))("Delete POD")
-        else Button(onClick = confirmPodCreation(_))("Create POD")
+        if (hasSpotPod) Button(onClick = confirmPodDeletion(user)(_))("Delete POD")
+        else Button(onClick = confirmPodCreation(user, podName)(_))("Create POD")
       )
     )
   }
@@ -74,15 +83,26 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
     )
   }
 
+  private def onChangeName(e: ReactEventFromInput): Callback = {
+    e.persist()
+    bs.modState(old => old.copy(state = old.state.copy(podName = e.target.value)))
+  }
+
+  private def handleKey(e: ReactKeyboardEvent): Callback =
+    handleEsc(() => setDialogShownFlag(false)).orElse(handleEnter(() =>
+      bs.state.flatMap(sxs => confirmPodCreation(sxs.state.user, sxs.state.podName)(e)))).orElse(ignoreKey)(e.keyCode)
+
   private def startPodCreation(e: ReactEventFromInput): Callback = setDialogShownFlag(true)
 
   private def setDialogShownFlag(flag: Boolean): Callback =
-    bs.modState(sxs => sxs.copy(state = sxs.state.copy(regDialogShown = flag)))
+    bs.modState(sxs => sxs.copy(state = sxs.state.copy(dialogShown = flag)))
 
   private def setErrorMessage(err: Option[String]): Callback =
     bs.modState(sxs => sxs.copy(state = sxs.state.copy(currentErrMessage = err)))
 
-  private def confirmPodCreation(e: ReactEventFromInput): Callback = Callback(()).flatMap(_ => setDialogShownFlag(false))
+  private def confirmPodCreation(user: User, podName: String)(e: ReactEvent): Callback = Callback.future {
+    ResourceService.createSpotPod(user, podName).map(_.fold(err => setErrorMessage(Some(err)), _ => setErrorMessage(None)))
+  }.flatMap(_ => setDialogShownFlag(false))
 
   private def confirmPodDeletion(user: User)(e: ReactEventFromInput): Callback = Callback.future {
     ResourceService.deleteSpotPod(user).map(_.fold(err => setErrorMessage(Some(err)), _ => setErrorMessage(None)))

@@ -11,6 +11,7 @@ import sttp.model.{HeaderNames, Uri}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.scalajs.js.Dynamic
 
 object ResourceService {
   private val podServerUrl = "http://localhost:8080"
@@ -42,7 +43,7 @@ object ResourceService {
     def delete(iri: IRI): Future[Unit] = RDFHelper.deleteResource(iri).map(_ => RDFHelper.reloadAndSync(iri.parent))
 
     r match {
-      case BlankNodeFSResource => Future(())
+      case BlankNodeFSResource => Future.successful(())
       case File(iri, _) => delete(iri)
       case Folder(iri, _) =>
         for {
@@ -64,37 +65,52 @@ object ResourceService {
 
   def getSpotPod(user: User): Future[Option[IRI]] =
     for {
-      result <- basicRequest.get(buildPodApiURI(user)).followRedirects(false).send()
-        .map(_.header(HeaderNames.Location).map(IRI(_)))
-    } yield result
+      res <- basicRequest.get(buildPodApiURI(user)).send()
+    } yield res.header(HeaderNames.Location).map(IRI(_))
 
-  def deleteSpotPod(user: User): Future[Either[String, String]] = {
-    val webIdRDF = RDFLib.sym(user.webId.toString)
+  def createSpotPod(user: User, podName: String): Future[Either[String, String]] = {
     val uri = buildPodApiURI(user)
     for {
-      resp <- basicRequest.delete(uri).send().map {
+      resp <- basicRequest.post(uri).body("podName" -> podName).send().flatMap {
         case r if r.isSuccess =>
-          val locationOpt = getSpotPodFromStore(user).map(_.toString) // workaround because the location header isn't there!
-          locationOpt.toRight("Impossible code branch, found no spoter.ME POD!")
+          val maybeLoc = r.header(HeaderNames.Location)
+            .fold[Either[String, String]](Left(s"Error: no ${HeaderNames.Location} header present"))(Right(_))
+          maybeLoc.fold(
+            _ => getSpotPod(user).map(oi => oi.toRight("Error: got no POD after creation!").map(_.toString)),
+            loc => Future.successful(Right(loc)))
+        case r if r.isClientError => Future.successful(Left(s"Client Error: ${r.code}"))
+        case r => Future.successful(Left(s"Server Error: ${r.code}"))
+      }.recoverWith { case e => Future.successful(Left(s"Server Error: ${e.getMessage}")) }
+      result <- resp.map(podUri => addPodStatement(user, podUri).map(_ => podUri))
+        .bifoldMap(err => Future.successful(Left(err)), _.map(Right(_)))
+    } yield result
+  }
+
+  def deleteSpotPod(user: User): Future[Either[String, String]] = {
+    val uri = buildPodApiURI(user)
+    for {
+      loc <- basicRequest.delete(uri).send().map {
+        case r if r.isSuccess => r.header(HeaderNames.Location).toRight("Impossible code branch, location header!")
         case r if r.isClientError => Left(s"Client Error: ${r.code}")
         case r => Left(s"Server Error: ${r.code}")
       }
-      result <- resp.map { podUri =>
-        RDFHelper.delStatementFromWeb(RDFLib.st(webIdRDF, RDFHelper.PIM("storage"), RDFLib.sym(podUri), webIdRDF))
+      result <- loc.map { podUri =>
+        delPodStatement(user, podUri)
           .recoverWith { case e if e.getMessage.contains("Remote Ok") => Future(()) } // workaround, store bug
           .map(_ => podUri)
-      }.bifoldMap(err => Future(Left(err)), _.map(Right(_)))
+      }.bifoldMap(err => Future.successful(Left(err)), _.map(Right(_)))
     } yield result
   }
 
-  def addPodStatement(user: User, pod: IRI): Future[Unit] = {
+  def addPodStatement(user: User, podIRI: String): Future[Unit] = updatePodStatement(RDFHelper.addStatementToWeb, user, podIRI)
+
+  def delPodStatement(user: User, podIRI: String): Future[Unit] = updatePodStatement(RDFHelper.delStatementFromWeb, user, podIRI)
+
+  private def updatePodStatement(op: Dynamic => Future[Unit], user: User, podIri: String): Future[Unit] = {
     val webIdRDF = RDFLib.sym(user.webId.toString)
-    RDFHelper.addStatementToWeb(RDFLib.st(webIdRDF, RDFHelper.PIM("storage"), RDFLib.sym(pod.toString), webIdRDF))
+    op(RDFLib.st(webIdRDF, RDFHelper.PIM("storage"), RDFLib.sym(podIri), webIdRDF))
   }
 
-  private def buildPodApiURI(user: User): Uri = {
-    val encodedWebId = scalajs.js.URIUtils.encodeURIComponent(user.webId.toString)
-    uri"$podServerUrl/management-api/pods/${user.webId}"
-  }
+  private def buildPodApiURI(user: User): Uri = uri"$podServerUrl/management-api/pods/${user.webId}"
 }
 
