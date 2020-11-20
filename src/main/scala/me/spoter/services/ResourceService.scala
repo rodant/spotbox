@@ -14,7 +14,8 @@ import scala.concurrent.Future
 import scala.scalajs.js.Dynamic
 
 object ResourceService {
-  private val podServerUrl = "http://localhost:8080"
+  private val podServerUrl = "https://spoterme-solid-server.herokuapp.com"
+  //private val podServerUrl = "http://localhost:8080"
   implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = FetchBackend()
 
   private def resourceFrom(iri: IRI, isPod: Boolean = false): FSResource = {

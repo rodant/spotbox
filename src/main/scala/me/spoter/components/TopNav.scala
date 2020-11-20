@@ -9,6 +9,7 @@ import me.spoter.models.User
 import me.spoter.models.rdf.IRI
 import me.spoter.services._
 import me.spoter.{Session, SessionTracker, StateXSession}
+import org.scalajs.dom.window
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -46,8 +47,8 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
     Modal(size = "lg", show = dialogShown, onHide = (_: Unit) => setDialogShownFlag(false))(
       ModalHeader(closeButton = true)(
         ModalTitle()(
-          if (hasSpotPod) "Delete your POD from spoter.ME Server"
-          else "Create own POD on spoter.ME Server")
+          if (hasSpotPod) "Delete your spoter.ME POD"
+          else "Create spoter.ME POD")
       ),
       ModalBody()(
         if (hasSpotPod)
@@ -100,13 +101,19 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
   private def setErrorMessage(err: Option[String]): Callback =
     bs.modState(sxs => sxs.copy(state = sxs.state.copy(currentErrMessage = err)))
 
-  private def confirmPodCreation(user: User, podName: String)(e: ReactEvent): Callback = Callback.future {
-    ResourceService.createSpotPod(user, podName).map(_.fold(err => setErrorMessage(Some(err)), _ => setErrorMessage(None)))
-  }.flatMap(_ => setDialogShownFlag(false))
+  private def confirmPodCreation(user: User, podName: String)(e: ReactEvent): Callback =
+    runPodManagementOp(ResourceService.createSpotPod(user, podName))
 
-  private def confirmPodDeletion(user: User)(e: ReactEventFromInput): Callback = Callback.future {
-    ResourceService.deleteSpotPod(user).map(_.fold(err => setErrorMessage(Some(err)), _ => setErrorMessage(None)))
-  }.flatMap(_ => setDialogShownFlag(false))
+  private def confirmPodDeletion(user: User)(e: ReactEventFromInput): Callback =
+    runPodManagementOp(ResourceService.deleteSpotPod(user))
+
+  private def runPodManagementOp(op: => Future[Either[String, String]]): Callback = Callback.future {
+    op.map(_.fold(err => setErrorMessage(Some(err)), _ => setErrorMessage(None)))
+      .map { callback =>
+        callback.flatMap(_ => setDialogShownFlag(false))
+          .map(_ => window.location.reload(true))
+      }
+  }
 }
 
 object TopNav extends SessionTracker[Unit, State, Backend] {
