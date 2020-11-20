@@ -74,19 +74,20 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
 
   private def renderBreadcrumb(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     def parent(iri: IRI): IRI = if (ResourceService.isPod(iri) || iri == iri.parent) IRI.BlankNodeIRI else iri.parent
+    def extendedLastPathComponent(iri: IRI): String = if (ResourceService.isPod(iri)) iri.removedTailingSlash.toString else iri.lastPathComponent
 
     @tailrec
     def toCompAndIRIs(cis: List[(String, IRI)]): List[(String, IRI)] = cis match {
       case Nil | (_, IRI.BlankNodeIRI) :: _ => cis
       case (_, iri) :: _ =>
-        val (parentPathComp, parentIri) = (parent(iri).removedTailingSlash.toString, parent(iri))
+        val (parentPathComp, parentIri) = (extendedLastPathComponent(parent(iri)), parent(iri))
         toCompAndIRIs((parentPathComp, parentIri) :: cis)
     }
 
     val rootIri = IRI(sxs.session.fold(IRI.BlankNodeIRI.innerUri)(_.webId)).root
     val pathCompIriPairs = props.iri.normalize match {
       case iri@IRI.BlankNodeIRI => List((iri.toString, rootIri))
-      case iri => toCompAndIRIs((if (ResourceService.isPod(iri)) iri.removedTailingSlash.toString else iri.lastPathComponent, iri) :: Nil)
+      case iri => toCompAndIRIs((extendedLastPathComponent(iri), iri) :: Nil)
     }
 
     Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(
