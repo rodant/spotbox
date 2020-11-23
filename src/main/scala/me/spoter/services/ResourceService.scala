@@ -57,7 +57,15 @@ object ResourceService {
 
   def isPod(iri: IRI): Boolean = {
     val pods = RDFHelper.statementsMatching(None, Some(RDFHelper.PIM("storage")), None, None)
-    pods.exists(p => p.`object`.value.toString == iri.toString || p.`object`.value.toString == iri.removedTailingSlash.toString)
+    if (pods.nonEmpty) {
+      pods.exists(p => IRI(p.`object`.value.toString).removedTailingSlash.toString == iri.removedTailingSlash.toString)
+    }
+    else {
+      // for the case the user profile isn't loaded yet
+      val pathComponents = iri.innerUri.getPath.split("/").toList
+      val nonEmptyComponents = pathComponents.count(_.nonEmpty)
+      nonEmptyComponents == 0 || (nonEmptyComponents == 1 && iri.toString.startsWith(podServerUrl))
+    }
   }
 
   def getPods(webId: URI): List[IRI] = RDFHelper.getAll(webId, RDFHelper.PIM("storage")).map(p => IRI(p.value.toString)).toList
