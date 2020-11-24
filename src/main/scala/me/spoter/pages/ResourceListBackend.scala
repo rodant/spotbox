@@ -136,7 +136,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
         promise.future.flatMap { data =>
           val encodedName = js.Dynamic.global.encodeURI(file.name).toString
           val fileIri = props.iri.concatPath(encodedName)
-          RDFHelper.uploadFile(fileIri, data, "image/png")
+          RDFHelper.uploadFile(fileIri, data, file.`type`)
         }.map { _ =>
           RDFHelper.reloadAndSync(props.iri)
           showUpload(false)
