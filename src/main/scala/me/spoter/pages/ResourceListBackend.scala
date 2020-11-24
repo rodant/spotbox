@@ -8,10 +8,15 @@ import me.spoter.components.bootstrap._
 import me.spoter.models.rdf.IRI
 import me.spoter.models.{FSResource, Folder}
 import me.spoter.services.ResourceService
+import me.spoter.solid_libs.RDFHelper
 
 import scala.annotation.tailrec
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Promise
+import scala.scalajs.js
+import scala.scalajs.js.typedarray.ArrayBufferView
 
-case class State(rs: Iterable[FSResource], newFSResource: Option[FSResource] = None)
+case class State(rs: Iterable[FSResource], newFSResource: Option[FSResource] = None, uploading: Boolean = false)
 
 abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[State]]) {
   protected val resourceUriFragment: String
@@ -45,11 +50,12 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
               <.i(^.className := "fas fa-file-upload ui-elem action-icon",
                 ^.title := "Upload file",
                 ^.alignSelf := "center",
-                ^.onClick --> Callback.empty)
+                ^.onClick --> showUpload(true))
             }
           )
         )
       ),
+      renderWhen(sxs.state.uploading)(renderUploadDialog(props, sxs)),
       renderWhen(sxs.session.isEmpty) {
         <.h2("Please log in!")
       },
@@ -74,6 +80,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
 
   private def renderBreadcrumb(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     def parent(iri: IRI): IRI = if (ResourceService.isPod(iri) || iri == iri.parent) IRI.BlankNodeIRI else iri.parent
+
     def extendedLastPathComponent(iri: IRI): String = if (ResourceService.isPod(iri)) iri.removedTailingSlash.toString else iri.lastPathComponent
 
     @tailrec
@@ -103,9 +110,61 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
     )
   }
 
+  private def renderUploadDialog(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
+    def confirmUpload()(e: ReactEvent): Callback = {
+      Callback.empty
+    }
+
+    def onFilesChange(e: ReactEventFromInput): Callback = {
+      import org.scalajs.dom.raw.FileReader
+
+      e.persist()
+      e.stopPropagation()
+      e.preventDefault()
+      val file = e.target.files(0)
+      val promise = Promise[ArrayBufferView]()
+      val reader = new FileReader()
+      reader.onloadend = e => {
+        if (e.loaded == file.size) {
+          promise.success(reader.result.asInstanceOf[ArrayBufferView])
+        } else {
+          promise.failure(new Exception(s"Error reading the file: ${file.name}"))
+        }
+      }
+      reader.readAsArrayBuffer(file)
+      Callback.future {
+        promise.future.flatMap { data =>
+          val encodedName = js.Dynamic.global.encodeURI(file.name).toString
+          val fileIri = props.iri.concatPath(encodedName)
+          RDFHelper.uploadFile(fileIri, data, "image/png")
+        }.map { _ =>
+          RDFHelper.reloadAndSync(props.iri)
+          showUpload(false)
+        }
+      }
+    }
+
+    Modal(size = "lg", show = true, onHide = (_: Unit) => showUpload(false))(
+      ModalHeader(closeButton = true)(ModalTitle()("Upload File")),
+      ModalBody()(
+        <.div(
+          <.p("Select the file to upload:"),
+          Form(validated = true)(^.noValidate := true, ^.onSubmit ==> dismissOnSubmit)(
+            FormControl(`type` = "file", onChange = onFilesChange(_))(^.autoFocus := true)
+          )
+        )),
+      ModalFooter()(
+        Button(variant = "secondary", onClick = (_: ReactEventFromInput) => showUpload(false))("Cancel"),
+        Button(onClick = confirmUpload()(_))("Upload File")
+      )
+    )
+  }
+
   private def onConfirm(): Callback = bs.state.zip(bs.props).flatMap[Unit] { case (sxs, props) =>
     sxs.state.newFSResource.fold(Callback.empty)(_ => createFSResource(props, sxs))
   }
+
+  def showUpload(flag: Boolean): Callback = bs.modState(sxs => sxs.copy(state = sxs.state.copy(uploading = flag)))
 
   private def onCancel(): Callback = bs.modState(old => old.copy(state = old.state.copy(newFSResource = None)))
 
