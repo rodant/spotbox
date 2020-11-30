@@ -37,7 +37,7 @@ object SPOTBox {
       }
     }
 
-    private[pages] def fetchEntities(props: Props, s: Session, forceLoad: Boolean = false): Future[State] = {
+    override def fetchEntities(props: Props, s: Session, forceLoad: Boolean = false): Future[State] = {
       val (effectiveIRI, isWebId) = if (props.iri == IRI.BlankNodeIRI) (IRI(s.webId), true) else (props.iri, false )
       ResourceService.listFolder(effectiveIRI, isWebId = isWebId, forceLoad = forceLoad).map { rs =>
         val resourceOrd = new Ordering[FSResource] {

@@ -2,7 +2,7 @@ package me.spoter.pages
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import me.spoter.StateXSession
+import me.spoter.{Session, StateXSession}
 import me.spoter.components._
 import me.spoter.components.bootstrap._
 import me.spoter.models.rdf.IRI
@@ -12,7 +12,7 @@ import me.spoter.solid_libs.RDFHelper
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Promise
+import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.ArrayBufferView
 
@@ -27,6 +27,8 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
   protected def newFolder(): Folder
 
   protected def createFSResource(props: SPOTBox.Props, sxs: StateXSession[State]): Callback
+
+  def fetchEntities(props: SPOTBox.Props, s: Session, forceLoad: Boolean = false): Future[State]
 
   def render(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     val rs = sxs.state.rs
@@ -137,10 +139,9 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
           val encodedName = js.Dynamic.global.encodeURI(file.name).toString
           val fileIri = props.iri.concatPath(encodedName)
           RDFHelper.uploadFile(fileIri, data, file.`type`)
-        }.map { _ =>
-          RDFHelper.reloadAndSync(props.iri)
-          showUpload(false)
-        }
+        }.flatMap { _ =>
+          fetchEntities(props, sxs.session.get, forceLoad = true)
+        }.map(s => bs.modState(_.copy(state = s)))
       }
     }
 
