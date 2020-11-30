@@ -113,8 +113,6 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
   }
 
   private def renderUploadDialog(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
-    val promise = Promise[ArrayBufferView]()
-
     def confirmUpload(sxs: StateXSession[State])(e: ReactEvent): Callback = {
       val resultOpt = for {
         file <- sxs.state.newFSResource.map {
@@ -138,6 +136,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
       e.preventDefault()
       val file = e.target.files(0)
       val reader = new FileReader()
+      val promise = Promise[ArrayBufferView]()
       reader.onloadend = e => {
         if (e.loaded == file.size) {
           promise.success(reader.result.asInstanceOf[ArrayBufferView])
