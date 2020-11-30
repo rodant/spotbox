@@ -42,8 +42,8 @@ object SPOTBox {
       ResourceService.listFolder(effectiveIRI, isWebId = isWebId, forceLoad = forceLoad).map { rs =>
         val resourceOrd = new Ordering[FSResource] {
           override def compare(x: FSResource, y: FSResource): Int = (x, y) match {
-            case (Folder(_, _), File(_, _)) => -1
-            case (File(_, _), Folder(_, _)) => 1
+            case (Folder(_, _), File(_, _, _, _)) => -1
+            case (File(_, _, _, _), Folder(_, _)) => 1
             case (e1, e2) => Ordering.by((e: FSResource) => e.name).compare(e1, e2)
           }
         }

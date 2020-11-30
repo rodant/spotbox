@@ -6,7 +6,7 @@ import me.spoter.{Session, StateXSession}
 import me.spoter.components._
 import me.spoter.components.bootstrap._
 import me.spoter.models.rdf.IRI
-import me.spoter.models.{FSResource, Folder}
+import me.spoter.models.{FSResource, File, Folder}
 import me.spoter.services.ResourceService
 import me.spoter.solid_libs.RDFHelper
 
@@ -113,8 +113,21 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
   }
 
   private def renderUploadDialog(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
-    def confirmUpload()(e: ReactEvent): Callback = {
-      Callback.empty
+    val promise = Promise[ArrayBufferView]()
+
+    def confirmUpload(sxs: StateXSession[State])(e: ReactEvent): Callback = {
+      val resultOpt = for {
+        file <- sxs.state.newFSResource.map {
+          case f: File => f
+          case r => throw new IllegalArgumentException(s"FSResource must be a File, got: $r")
+        }
+        encodedName = js.Dynamic.global.encodeURI(file.name).toString
+        fileIri = props.iri.concatPath(encodedName)
+        data <- file.data
+        upload = RDFHelper.uploadFile(fileIri, data, file.`type`)
+        state = upload.flatMap(_ => fetchEntities(props, sxs.session.get, forceLoad = true))
+      } yield state.map(s => bs.modState(_.copy(state = s)))
+      resultOpt.fold(Callback.empty)(Callback.future(_))
     }
 
     def onFilesChange(e: ReactEventFromInput): Callback = {
@@ -124,7 +137,6 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
       e.stopPropagation()
       e.preventDefault()
       val file = e.target.files(0)
-      val promise = Promise[ArrayBufferView]()
       val reader = new FileReader()
       reader.onloadend = e => {
         if (e.loaded == file.size) {
@@ -135,17 +147,14 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
       }
       reader.readAsArrayBuffer(file)
       Callback.future {
-        promise.future.flatMap { data =>
-          val encodedName = js.Dynamic.global.encodeURI(file.name).toString
-          val fileIri = props.iri.concatPath(encodedName)
-          RDFHelper.uploadFile(fileIri, data, file.`type`)
-        }.flatMap { _ =>
-          fetchEntities(props, sxs.session.get, forceLoad = true)
-        }.map(s => bs.modState(_.copy(state = s)))
+        promise.future.map { data =>
+          bs.modState(sxs => sxs.copy(state = sxs.state.copy(
+            newFSResource = Some(File(name = file.name, `type` = file.`type`, data = Some(data))))))
+        }
       }
     }
 
-    Modal(size = "lg", show = true, onHide = (_: Unit) => showUpload(false))(
+    Modal(show = true, onHide = (_: Unit) => showUpload(false))(
       ModalHeader(closeButton = true)(ModalTitle()("Upload File")),
       ModalBody()(
         <.div(
@@ -156,7 +165,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
         )),
       ModalFooter()(
         Button(variant = "secondary", onClick = (_: ReactEventFromInput) => showUpload(false))("Cancel"),
-        Button(onClick = confirmUpload()(_))("Upload File")
+        Button(active = sxs.state.newFSResource.nonEmpty, onClick = confirmUpload(sxs)(_))("Upload File")
       )
     )
   }
@@ -165,7 +174,8 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
     sxs.state.newFSResource.fold(Callback.empty)(_ => createFSResource(props, sxs))
   }
 
-  def showUpload(flag: Boolean): Callback = bs.modState(sxs => sxs.copy(state = sxs.state.copy(uploading = flag)))
+  def showUpload(flag: Boolean): Callback =
+    bs.modState(sxs => sxs.copy(state = sxs.state.copy(uploading = flag, newFSResource = None)))
 
   private def onCancel(): Callback = bs.modState(old => old.copy(state = old.state.copy(newFSResource = None)))
 

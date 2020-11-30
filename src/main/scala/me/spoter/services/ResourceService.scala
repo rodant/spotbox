@@ -45,7 +45,7 @@ object ResourceService {
 
     r match {
       case BlankNodeFSResource => Future.successful(())
-      case File(iri, _) => delete(iri)
+      case File(iri, _, _, _) => delete(iri)
       case Folder(iri, _) =>
         for {
           children <- RDFHelper.listDir(iri.innerUri, RDFHelper.LDP("contains"), forceLoad = true)
