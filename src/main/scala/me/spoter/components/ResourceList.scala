@@ -4,7 +4,10 @@ import japgolly.scalajs.react.component.builder.Lifecycle
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ReactEventFromInput, ScalaComponent}
 import me.spoter.components.bootstrap._
-import me.spoter.models.{BlankNodeFSResource, Folder, FSResource}
+import me.spoter.models.{BlankNodeFSResource, FSResource, File, Folder}
+import org.scalajs.dom.raw.{Blob, BlobPropertyBag, URL}
+
+import scala.scalajs.js
 
 object ResourceList {
 
@@ -28,30 +31,48 @@ object ResourceList {
     val uriFragment = $.props.resourceUriFragment
     val folderIcon = <.i(^.alignSelf := "center", ^.color := "#F97B", ^.className := "fas fa-folder fa-2x")
     val fileIcon = <.i(^.alignSelf := "center", ^.color := "#0009", ^.className := "far fa-file-alt fa-2x")
-    <.div(^.key := e.name,
-      Row()(
-        Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
-          <.div(^.display := "flex",
-            e match {
-              case Folder(_, _) => folderIcon
-              case _ => fileIcon
-            },
-            NavLink(href = s"#$uriFragment?iri=${e.iri}")(e.name)
+    e match {
+      case Folder(_, _) =>
+        <.div(^.key := e.name,
+          Row()(
+            Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
+              <.div(^.display := "flex", folderIcon,
+                NavLink(href = s"#$uriFragment?iri=${e.iri}")(e.name)
+              )
+            ),
+            Col()(
+              $.props.deleteHandler.map { _ =>
+                <.i(^.className := "far fa-trash-alt ui-elem action-icon",
+                  ^.title := "Delete",
+                  ^.marginTop := 10.px,
+                  ^.onClick --> $.modState(_.copy(resourceToDelete = Some(e))))
+              }
+            )
           )
-        ),
-        Col()(
-          <.i(^.className := "fas fa-file-download ui-elem action-icon",
-            ^.title := "Download",
-            ^.onClick --> Callback.empty),
-          $.props.deleteHandler.map { _ =>
-            <.i(^.className := "far fa-trash-alt ui-elem action-icon",
-              ^.title := "Delete",
-              ^.marginTop := 10.px,
-              ^.onClick --> $.modState(_.copy(resourceToDelete = Some(e))))
-          }
         )
-      )
-    )
+      case r =>
+        val f = r.asInstanceOf[File]
+        val options = BlobPropertyBag(f.`type`)
+        val downloadURL = URL.createObjectURL(new Blob(js.Array(f.data.get), options))
+        <.div(^.key := e.name,
+          Row()(
+            Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
+              <.div(^.display := "flex", fileIcon, NavLink(active = false)(e.name))
+            ),
+            Col()(
+              <.a(^.href := downloadURL, ^.download := s"${e.name}",
+                <.i(^.className := "fas fa-file-download ui-elem action-icon",
+                  ^.title := "Download")),
+              $.props.deleteHandler.map { _ =>
+                <.i(^.className := "far fa-trash-alt ui-elem action-icon",
+                  ^.title := "Delete",
+                  ^.marginTop := 10.px,
+                  ^.onClick --> $.modState(_.copy(resourceToDelete = Some(e))))
+              }
+            )
+          )
+        )
+    }
   }
 
   private def renderConfirmDeletion($: Lifecycle.RenderScope[Props, State, Unit]): VdomElement = {
@@ -63,7 +84,7 @@ object ResourceList {
       deleteHandler(resourceToDelete).flatMap(close)
     }
 
-    Modal(size = "sm", show = resourceToDelete != BlankNodeFSResource, onHide = close)(
+    Modal(show = resourceToDelete != BlankNodeFSResource, onHide = close)(
       ModalHeader(closeButton = true)(
         ModalTitle()("Delete Resource")
       ),

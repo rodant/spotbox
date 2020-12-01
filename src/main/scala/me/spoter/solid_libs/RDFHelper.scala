@@ -72,14 +72,19 @@ object RDFHelper {
   def reloadAndSync(iri: IRI): Unit = updateManager.reloadAndSync(RDFLib.sym(iri.toString))
 
   def listDir(dirUri: URI, property: js.Dynamic, forceLoad: Boolean = false): Future[Seq[URI]] =
-    RDFHelper.loadEntity[Seq[URI]](dirUri, forceLoad) {
+    RDFHelper.loadEntity[Seq[URI]](dirUri, forceLoad) { _ =>
       val filesNodes = RDFHelper.getAll(dirUri, property)
       filesNodes.map(f => new URI(f.value.toString))
     }
 
-  def loadEntity[A](sub: URI, forceLoad: Boolean = false)(b: => A): Future[A] = {
+  def loadEntity[A](sub: URI, forceLoad: Boolean = false)(b: js.Object => A): Future[A] = {
     val options: UndefOr[js.Dynamic] = if (forceLoad) js.Dynamic.literal(force = forceLoad) else js.undefined
-    load(sub, options).map(_ => b)
+    load(sub, options).map(b)
+  }
+
+  def flatLoadEntity[A](sub: URI, forceLoad: Boolean = false)(b: js.Object => Future[A]): Future[A] = {
+    val options: UndefOr[js.Dynamic] = if (forceLoad) js.Dynamic.literal(force = forceLoad) else js.undefined
+    load(sub, options).flatMap(b)
   }
 
   def getAll(sub: URI, prop: js.Dynamic): js.Array[js.Dynamic] =

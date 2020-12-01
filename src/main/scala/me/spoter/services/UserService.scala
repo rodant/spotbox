@@ -12,14 +12,14 @@ import scala.util.Success
 
 object UserService {
   def fetchUser(webId: URI): Future[User] = {
-    RDFHelper.loadEntity(webId) {
+    RDFHelper.loadEntity(webId) { _ =>
       val pods = ResourceService.getPods(webId)
       val hasEmailNode = RDFHelper.get(webId, RDFHelper.VCARD("hasEmail"))
       hasEmailNode match {
         case n if js.isUndefined(n) => Future(User(webId, pods))
         case _ =>
           val emailUri = new URI(hasEmailNode.value.toString)
-          RDFHelper.loadEntity(emailUri)(
+          RDFHelper.loadEntity(emailUri)( _ =>
             User(webId, pods, Some(new URI(RDFHelper.get(emailUri, RDFHelper.VCARD("value")).value.toString)))
           )
       }
