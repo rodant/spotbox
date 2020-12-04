@@ -39,7 +39,7 @@ object ResourceService {
     val property = if (isWebId) RDFHelper.PIM("storage") else RDFHelper.LDP("contains")
     RDFHelper.listDir(iri.innerUri, property, forceLoad)
       .flatMap { us =>
-        us.toList.traverse { u =>
+        us.toList.distinct.traverse { u =>
           RDFHelper.flatLoadEntity(u, forceLoad = forceLoad)(res => resourceFrom(IRI(u), Option(res), isPod = isWebId))
             .recover {
               case e if e.getMessage.contains("Forbidden") => BlankNodeFSResource
