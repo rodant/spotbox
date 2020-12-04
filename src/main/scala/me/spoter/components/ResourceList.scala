@@ -5,9 +5,12 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ReactEventFromInput, ScalaComponent}
 import me.spoter.components.bootstrap._
 import me.spoter.models.{BlankNodeFSResource, FSResource, File, Folder}
-import org.scalajs.dom.raw.{Blob, BlobPropertyBag, URL}
+import me.spoter.solid_libs.RDFHelper
+import org.scalajs.dom.experimental.Response
+import org.scalajs.dom.{FileReader, window}
 
-import scala.scalajs.js
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Promise
 
 object ResourceList {
 
@@ -31,48 +34,28 @@ object ResourceList {
     val uriFragment = $.props.resourceUriFragment
     val folderIcon = <.i(^.alignSelf := "center", ^.color := "#F97B", ^.className := "fas fa-folder fa-2x")
     val fileIcon = <.i(^.alignSelf := "center", ^.color := "#0009", ^.className := "far fa-file-alt fa-2x")
-    e match {
-      case Folder(_, _) =>
-        <.div(^.key := e.name,
-          Row()(
-            Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
-              <.div(^.display := "flex", folderIcon,
-                NavLink(href = s"#$uriFragment?iri=${e.iri}")(e.name)
-              )
-            ),
-            Col()(
-              $.props.deleteHandler.map { _ =>
-                <.i(^.className := "far fa-trash-alt ui-elem action-icon",
-                  ^.title := "Delete",
-                  ^.marginTop := 10.px,
-                  ^.onClick --> $.modState(_.copy(resourceToDelete = Some(e))))
-              }
-            )
-          )
-        )
+    val (resourceIcon, navLink, downloadButton) = e match {
+      case Folder(_, _) => (folderIcon, NavLink(href = s"#$uriFragment?iri=${e.iri}")(e.name), None)
       case r =>
         val f = r.asInstanceOf[File]
-        val options = BlobPropertyBag(f.`type`)
-        val downloadURL = URL.createObjectURL(new Blob(js.Array(f.data.get), options))
-        <.div(^.key := e.name,
-          Row()(
-            Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
-              <.div(^.display := "flex", fileIcon, NavLink(active = false)(e.name))
-            ),
-            Col()(
-              <.a(^.href := downloadURL, ^.download := s"${e.name}",
-                <.i(^.className := "fas fa-file-download ui-elem action-icon",
-                  ^.title := "Download")),
-              $.props.deleteHandler.map { _ =>
-                <.i(^.className := "far fa-trash-alt ui-elem action-icon",
-                  ^.title := "Delete",
-                  ^.marginTop := 10.px,
-                  ^.onClick --> $.modState(_.copy(resourceToDelete = Some(e))))
-              }
-            )
-          )
-        )
+        (fileIcon, NavLink(active = false)(e.name),
+          Some(<.a(^.download := s"${e.name}", ^.onClick ==> startDownload(f),
+            <.i(^.className := "fas fa-file-download ui-elem action-icon", ^.title := "Download"))))
     }
+    <.div(^.key := e.name,
+      Row()(
+        Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(<.div(^.display := "flex", resourceIcon, navLink)),
+        Col()(
+          $.props.deleteHandler.map { _ =>
+            <.i(^.className := "far fa-trash-alt ui-elem action-icon",
+              ^.title := "Delete",
+              ^.marginTop := 10.px,
+              ^.onClick --> $.modState(_.copy(resourceToDelete = Some(e))))
+          },
+          downloadButton
+        )
+      )
+    )
   }
 
   private def renderConfirmDeletion($: Lifecycle.RenderScope[Props, State, Unit]): VdomElement = {
@@ -100,5 +83,21 @@ object ResourceList {
         Button(onClick = confirmDeletion(_))("Delete")
       )
     )
+  }
+
+  private def startDownload(file: File)(e: ReactEventFromInput): Callback = Callback.future {
+    e.preventDefault()
+    e.stopPropagation()
+    RDFHelper.flatLoadEntity(file.iri.innerUri, forceLoad = true) {
+      case res: Response =>
+        val promise = Promise[String]
+        val reader = new FileReader()
+        reader.onload = _ => promise.success(reader.result.asInstanceOf[String])
+        reader.onerror = _ => promise.failure(new Exception(s"Error reading the file download URL: ${file.name}"))
+        res.blob().toFuture.flatMap { blob =>
+          reader.readAsDataURL(blob)
+          promise.future
+        }.map(url => Callback(window.open(url.replaceFirst(":.+;", ":octet/stream;"))))
+    }
   }
 }

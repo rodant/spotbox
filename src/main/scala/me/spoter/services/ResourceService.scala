@@ -4,46 +4,30 @@ import cats.implicits._
 import me.spoter.models._
 import me.spoter.models.rdf.IRI
 import me.spoter.solid_libs._
-import org.scalajs.dom.experimental.{ReadableStreamReader, Response}
+import org.scalajs.dom.experimental.Response
 import sttp.client._
 import sttp.model.{HeaderNames, Uri}
 
 import java.net.URI
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic
-import scala.scalajs.js.typedarray._
 
 object ResourceService {
   //private val podServerUrl = "https://spoterme-solid-server.herokuapp.com"
   private val podServerUrl = "http://localhost:8080"
   implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = FetchBackend()
 
-  private def resourceFrom(iri: IRI, data: Option[js.Object] = None, isPod: Boolean = false): Future[FSResource] = {
-    def readAllChunks(reader: ReadableStreamReader[Uint8Array]): Future[Int16Array] = {
-      def accumulateChunks(reader: ReadableStreamReader[Uint8Array], acc: ArrayBuffer[Short]): Future[ArrayBuffer[Short]] = {
-        reader.read().toFuture.flatMap { chunk =>
-          if (chunk.done) {
-            reader.releaseLock()
-            Future.successful(acc)
-          }
-          else accumulateChunks(reader, acc ++ chunk.value)
-        }
-      }
-
-      accumulateChunks(reader, new ArrayBuffer(0)).map(_.toArray.toTypedArray)
-    }
-
+  private def resourceFrom(iri: IRI, res: Option[js.Object] = None, isPod: Boolean = false): Future[FSResource] = {
     val types = RDFHelper.getAll(iri.innerUri, RDFHelper.RDF("type"))
     val isContainer = types.exists(_.value.toString.contains("Container"))
     if (isContainer) Future.successful(Folder(iri, if (isPod) iri.removedTailingSlash.toString else iri.shortString))
     else {
-      data.map {
+      res.map {
         case r: Response =>
-          val contentType = r.headers.get("Content-Type").getOrElse("plain/text")
-          readAllChunks(r.body.getReader()).map(d => File(iri, iri.lastPathComponent, data = Option(d), `type` = contentType))
+          val contentType = r.headers.get("Content-Type").getOrElse(File.defaultType)
+          Future.successful(File(iri, iri.lastPathComponent, `type` = contentType))
       }.getOrElse(Future.successful(File(iri, iri.lastPathComponent)))
     }
   }
@@ -56,9 +40,10 @@ object ResourceService {
     RDFHelper.listDir(iri.innerUri, property, forceLoad)
       .flatMap { us =>
         us.toList.traverse { u =>
-          RDFHelper.flatLoadEntity(u)(d => resourceFrom(IRI(u), Option(d), isPod = isWebId)).recover {
-            case e if e.getMessage.contains("Forbidden") => BlankNodeFSResource
-          }
+          RDFHelper.flatLoadEntity(u, forceLoad = forceLoad)(res => resourceFrom(IRI(u), Option(res), isPod = isWebId))
+            .recover {
+              case e if e.getMessage.contains("Forbidden") => BlankNodeFSResource
+            }
         }.map(_.filter(r => r != BlankNodeFSResource && (if (showHidden) true else !r.isHidden)))
       }
   }

@@ -2,13 +2,13 @@ package me.spoter.pages
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import me.spoter.{Session, StateXSession}
 import me.spoter.components._
 import me.spoter.components.bootstrap._
 import me.spoter.models.rdf.IRI
 import me.spoter.models.{FSResource, File, Folder}
 import me.spoter.services.ResourceService
 import me.spoter.solid_libs.RDFHelper
+import me.spoter.{Session, StateXSession}
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -147,8 +147,10 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
       reader.readAsArrayBuffer(file)
       Callback.future {
         promise.future.map { data =>
-          bs.modState(sxs => sxs.copy(state = sxs.state.copy(
-            newFSResource = Some(File(name = file.name, `type` = file.`type`, data = Some(data))))))
+          bs.modState { sxs =>
+            val contentType = if (file.`type`.nonEmpty) file.`type` else File.defaultType
+            sxs.copy(state = sxs.state.copy(newFSResource = Some(File(name = file.name, `type` = contentType, data = Some(data)))))
+          }
         }
       }
     }
