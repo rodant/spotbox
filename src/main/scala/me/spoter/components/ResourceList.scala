@@ -44,7 +44,7 @@ object ResourceList {
     }
     <.div(^.key := e.name,
       Row()(
-        Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(<.div(^.display := "flex", resourceIcon, navLink)),
+        Col(xl = 10, lg = 10, md = 10, sm = 9, xs = 9)(<.div(^.display := "flex", resourceIcon, navLink)),
         Col()(
           $.props.deleteHandler.map { _ =>
             <.i(^.className := "far fa-trash-alt ui-elem action-icon",

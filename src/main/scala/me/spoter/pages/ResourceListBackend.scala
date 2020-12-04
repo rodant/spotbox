@@ -34,7 +34,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
     val rs = sxs.state.rs
     Container(
       Row()(^.borderBottom := "1px lightgrey solid", ^.paddingBottom := 5.px)(
-        Col(xl = 10, lg = 10, md = 10, sm = 10, xs = 10)(
+        Col(xl = 10, lg = 10, md = 10, sm = 9, xs = 9)(
           <.div(^.display := "flex",
             <.i(^.color := "#F97B", ^.alignSelf := "center", ^.className := "fas fa-folder-open fa-2x ui-elem"),
             <.div(^.display := "flex", renderBreadcrumb(props, sxs))
