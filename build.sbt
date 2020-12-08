@@ -32,6 +32,7 @@ lazy val root = (project in file(".")).
       "org.typelevel" %%% "cats-core" % "1.6.0",
       "org.typelevel" %%% "cats-macros" % "1.6.0",
       "org.typelevel" %%% "cats-kernel" % "1.6.0",
+      "com.softwaremill.sttp.client" %%% "core" % "2.0.0-M6",
       "org.scalatest" %%% "scalatest" % "3.0.7" % Test
     ),
     npmDependencies in Compile ++= Seq(
