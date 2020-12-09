@@ -20,12 +20,17 @@ object BlankNodeFSResource extends FSResource(IRI.BlankNodeIRI, IRI.BlankNodeIRI
   override def withNewName(n: String): FSResource = this
 }
 
-case class Folder(override val iri: IRI = BlankNodeFSResource.iri,
+final case class POD(override val iri: IRI = BlankNodeFSResource.iri,
+               override val name: String = "") extends FSResource(iri, name) {
+  override def withNewName(n: String): POD = copy(name = n)
+}
+
+final case class Folder(override val iri: IRI = BlankNodeFSResource.iri,
                   override val name: String = "") extends FSResource(iri, name) {
   override def withNewName(n: String): Folder = copy(name = n)
 }
 
-case class File(override val iri: IRI = BlankNodeFSResource.iri,
+final case class File(override val iri: IRI = BlankNodeFSResource.iri,
                 override val name: String = "", `type`: String = defaultType, data: Option[ArrayBufferView] = None) extends FSResource(iri, name) {
   override def withNewName(n: String): FSResource = copy(name = n)
 }

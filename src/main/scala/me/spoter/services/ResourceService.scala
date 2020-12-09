@@ -19,19 +19,6 @@ object ResourceService {
   //private val podServerUrl = "http://localhost:8080"
   implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = FetchBackend()
 
-  private def resourceFrom(iri: IRI, res: Option[js.Object] = None, isPod: Boolean = false): Future[FSResource] = {
-    val types = RDFHelper.getAll(iri.innerUri, RDFHelper.RDF("type"))
-    val isContainer = types.exists(_.value.toString.contains("Container"))
-    if (isContainer) Future.successful(Folder(iri, if (isPod) iri.removedTailingSlash.toString else iri.shortString))
-    else {
-      res.map {
-        case r: Response =>
-          val contentType = r.headers.get("Content-Type").getOrElse(File.defaultType)
-          Future.successful(File(iri, iri.lastPathComponent, `type` = contentType))
-      }.getOrElse(Future.successful(File(iri, iri.lastPathComponent)))
-    }
-  }
-
   def createFolder(iri: IRI, name: String): Future[Unit] =
     RDFHelper.createContainerResource(iri.innerUri, name).map(_ => ())
 
@@ -61,6 +48,7 @@ object ResourceService {
           _ <- frs.traverse(fr => deleteResource(fr))
           _ <- delete(iri)
         } yield ()
+      case POD(iri, _) => Future.failed(new IllegalArgumentException(s"Not allowed to delete a POD: $iri"))
     }
   }
 
@@ -130,5 +118,21 @@ object ResourceService {
   }
 
   private def buildPodApiURI(user: User): Uri = uri"$podServerUrl/management-api/pods/${user.webId}"
+
+  private def resourceFrom(iri: IRI, res: Option[js.Object] = None, isPod: Boolean = false): Future[FSResource] = {
+    val types = RDFHelper.getAll(iri.innerUri, RDFHelper.RDF("type"))
+    val isContainer = types.exists(_.value.toString.contains("Container"))
+    if (isContainer) {
+      if (!isPod) Future.successful(Folder(iri, iri.shortString))
+      else Future.successful(POD(iri, iri.removedTailingSlash.toString))
+    } else {
+      res.map {
+        case r: Response =>
+          val contentType = r.headers.get("Content-Type").getOrElse(File.defaultType)
+          Future.successful(File(iri, iri.lastPathComponent, `type` = contentType))
+      }.getOrElse(Future.successful(File(iri, iri.lastPathComponent)))
+    }
+  }
+
 }
 
