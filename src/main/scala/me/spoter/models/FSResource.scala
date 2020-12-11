@@ -36,5 +36,5 @@ final case class File(override val iri: IRI = BlankNodeFSResource.iri,
 }
 
 object File {
-  val defaultType = "plain/text"
+  val defaultType = "text/plain"
 }

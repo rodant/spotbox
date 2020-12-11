@@ -50,7 +50,7 @@ object ResourceList {
     val deleteBtn = Some(createDeleteBtn(e)).flatten
     val (resourceIcon, navLink, downloadButton, deleteButton) = e match {
       case POD(_, _) =>
-        val podIcon = <.i(^.alignSelf := "center", ^.color := "#F97B", ^.className := "fas fa-database fa-2x")
+        val podIcon = <.i(^.alignSelf := "center", ^.color := "#6C757D", ^.className := "fas fa-database fa-2x")
         (podIcon, NavLink(href = s"#$uriFragment?iri=${e.iri}")(e.name), None, None)
       case Folder(_, _) =>
         val folderIcon = <.i(^.alignSelf := "center", ^.color := "#F97B", ^.className := "fas fa-folder fa-2x")
@@ -118,11 +118,18 @@ object ResourceList {
       val mimeType = mimeTypeRegex.findFirstMatchIn(url).map { m =>
         m.group(1)
       }.getOrElse(File.defaultType)
+      val contentView = mimeType match {
+        case mt if mt.startsWith("audio/") => <.audio(^.src := url, ^.controls := true, ^.width := "100%")
+        case mt if mt startsWith ("video/") => <.video(^.src := url, ^.controls := true, ^.width := "100%")
+        case mt if mt.startsWith("image/") => <.img(^.src := url, ^.width := "100%")
+        case mt if mt.startsWith("text/") || mt.endsWith("/text") => <.textarea(^.value := url, ^.width := "100%", ^.height := 500.px)
+        case _ => <.`object`(Attr("data") := url, ^.`type` := mimeType, ^.width := "100%", ^.height := 500.px)
+      }
       Modal(size = "lg", show = true, onHide = close)(
         ModalHeader(closeButton = true)(
           ModalTitle()("File View")
         ),
-        ModalBody()(<.p(<.`object`(Attr("data") := url, ^.`type` := mimeType, ^.width := "100%", ^.height := 500.px)))
+        ModalBody()(<.p(contentView))
       )
     }
   }
