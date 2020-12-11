@@ -9,7 +9,7 @@ import me.spoter.models._
 import me.spoter.solid_libs.RDFHelper
 import org.scalajs.dom.experimental.Response
 import org.scalajs.dom.html.Element
-import org.scalajs.dom.{FileReader, window}
+import org.scalajs.dom.{Blob, FileReader, window}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
@@ -18,7 +18,7 @@ object ResourceList {
 
   case class Props(resourceUriFragment: String, es: Iterable[FSResource], deleteHandler: Option[FSResource => Callback])
 
-  case class State(resourceToDelete: Option[FSResource] = None, dataUrlToOpen: Option[String] = None)
+  case class State(resourceToDelete: Option[FSResource] = None, dataToOpen: Option[String] = None)
 
   private val component = ScalaComponent
     .builder[Props]("ResourceList")
@@ -96,34 +96,19 @@ object ResourceList {
     )
   }
 
-  private def startDownload(file: File)(e: ReactEventFromInput): Callback = Callback.future {
-    e.preventDefault()
-    e.stopPropagation()
-    generateDataUrl(file).map(url => Callback(window.open(url.replaceFirst(":.+;", ":octet/stream;"))))
-  }
-
-  private def openResource(file: File, $: Lifecycle.RenderScope[Props, State, Unit])(e: ReactEventFromInput): Callback =
-    Callback.future {
-      e.preventDefault()
-      e.stopPropagation()
-      generateDataUrl(file).map { url =>
-        $.modState(old => old.copy(dataUrlToOpen = Some(url)))
-      }
-    }
-
   private def renderFileView($: Lifecycle.RenderScope[Props, State, Unit]): Option[VdomElement] = {
-    val close = (_: Unit) => $.modState(_.copy(dataUrlToOpen = None))
-    $.state.dataUrlToOpen.map { url =>
+    val close = (_: Unit) => $.modState(_.copy(dataToOpen = None))
+    $.state.dataToOpen.map { data =>
       val mimeTypeRegex = "data:(.+);.+".r("mimeType")
-      val mimeType = mimeTypeRegex.findFirstMatchIn(url).map { m =>
-        m.group(1)
+      val mimeType = mimeTypeRegex.findFirstMatchIn(data).map { m =>
+        m.group("mimeType")
       }.getOrElse(File.defaultType)
       val contentView = mimeType match {
-        case mt if mt.startsWith("audio/") => <.audio(^.src := url, ^.controls := true, ^.width := "100%")
-        case mt if mt startsWith ("video/") => <.video(^.src := url, ^.controls := true, ^.width := "100%")
-        case mt if mt.startsWith("image/") => <.img(^.src := url, ^.width := "100%")
-        case mt if mt.startsWith("text/") || mt.endsWith("/text") => <.textarea(^.value := url, ^.width := "100%", ^.height := 500.px)
-        case _ => <.`object`(Attr("data") := url, ^.`type` := mimeType, ^.width := "100%", ^.height := 500.px)
+        case mt if mt.startsWith("audio/") => <.audio(^.src := data, ^.controls := true, ^.width := "100%")
+        case mt if mt startsWith ("video/") => <.video(^.src := data, ^.controls := true, ^.width := "100%")
+        case mt if mt.startsWith("image/") => <.img(^.src := data, ^.width := "100%")
+        case File.defaultType => <.textarea(^.value := data, ^.width := "100%", ^.height := 500.px)
+        case _ => <.`object`(Attr("data") := data, ^.`type` := mimeType, ^.width := "100%", ^.height := 500.px)
       }
       Modal(size = "lg", show = true, onHide = close)(
         ModalHeader(closeButton = true)(
@@ -134,7 +119,28 @@ object ResourceList {
     }
   }
 
-  private def generateDataUrl(f: File): Future[String] =
+  private def startDownload(file: File)(e: ReactEventFromInput): Callback = Callback.future {
+    e.preventDefault()
+    e.stopPropagation()
+    generateDataUrl(file).map(url => Callback(window.open(url.replaceFirst(":.+;", ":octet/stream;"))))
+  }
+
+  private def openResource(file: File, $: Lifecycle.RenderScope[Props, State, Unit])(e: ReactEventFromInput): Callback =
+    Callback.future {
+      e.preventDefault()
+      e.stopPropagation()
+      (if (file.`type`.startsWith("text/") || file.`type`.endsWith("/text")) readTextFile(file)
+      else generateDataUrl(file))
+        .map { data =>
+          $.modState(old => old.copy(dataToOpen = Some(data)))
+        }
+    }
+
+  private def generateDataUrl(f: File): Future[String] = readFileData(f)(reader => reader.readAsDataURL)
+
+  private def readTextFile(f: File): Future[String] = readFileData(f)(reader => reader.readAsText(_))
+
+  private def readFileData(f: File)(op: FileReader => Blob => Unit): Future[String] =
     RDFHelper.flatLoadEntity(f.iri.innerUri, forceLoad = true) {
       case res: Response =>
         val promise = Promise[String]
@@ -142,7 +148,7 @@ object ResourceList {
         reader.onload = _ => promise.success(reader.result.asInstanceOf[String])
         reader.onerror = _ => promise.failure(new Exception(s"Error reading the file for data URL: ${f.name}"))
         res.blob().toFuture.flatMap { blob =>
-          reader.readAsDataURL(blob)
+          op(reader)(blob)
           promise.future
         }
     }
