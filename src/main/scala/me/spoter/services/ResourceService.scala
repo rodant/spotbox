@@ -6,7 +6,7 @@ import me.spoter.models.rdf.IRI
 import me.spoter.solid_libs._
 import org.scalajs.dom.experimental.Response
 import sttp.client._
-import sttp.model.{HeaderNames, Uri}
+import sttp.model.{Header, HeaderNames, Uri}
 
 import java.net.URI
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -69,15 +69,17 @@ object ResourceService {
 
   def getSpotPodFromStore(user: User): Option[IRI] = getPods(user.webId).find(_.toString.startsWith(podServerUrl))
 
+  private val podApiKey = "APlbQ8NCmR_WAJqq40cpRcEkp_ZyH1B39F0UU5ZuwY1l"
+
   def getSpotPod(user: User): Future[Option[IRI]] =
     for {
-      res <- basicRequest.get(buildPodApiURI(user)).send()
+      res <- basicRequest.header(Header("API-Key", podApiKey)).get(buildPodApiURI(user)).send()
     } yield res.header(HeaderNames.Location).map(IRI(_))
 
   def createSpotPod(user: User, podName: String): Future[Either[String, String]] = {
     val uri = buildPodApiURI(user)
     for {
-      resp <- basicRequest.post(uri).body("podName" -> podName).send().flatMap {
+      resp <- basicRequest.header(Header("API-Key", podApiKey)).post(uri).body("podName" -> podName).send().flatMap {
         case r if r.isSuccess =>
           val maybeLoc = r.header(HeaderNames.Location)
             .fold[Either[String, String]](Left(s"Error: no ${HeaderNames.Location} header present"))(Right(_))
@@ -95,7 +97,7 @@ object ResourceService {
   def deleteSpotPod(user: User): Future[Either[String, String]] = {
     val uri = buildPodApiURI(user)
     for {
-      loc <- basicRequest.delete(uri).send().map {
+      loc <- basicRequest.header(Header("API-Key", podApiKey)).delete(uri).send().map {
         case r if r.isSuccess => r.header(HeaderNames.Location).toRight("Impossible code branch, location header!")
         case r if r.isClientError => Left(s"Client Error: ${r.code}")
         case r => Left(s"Server Error: ${r.code}")
