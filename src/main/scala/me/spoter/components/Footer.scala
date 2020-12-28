@@ -11,7 +11,7 @@ object Footer {
       <.footer(
         ^.textAlign.center,
         ^.minHeight := 100.px,
-        ^.backgroundColor := "#545b62",
+        ^.backgroundColor := "#333333",
         ^.color.white,
         <.div(^.borderBottom := "1px solid grey", ^.padding := "0px"),
         <.p(^.paddingTop := "5px", "Footer")

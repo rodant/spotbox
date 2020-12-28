@@ -19,25 +19,31 @@ case class State(user: User, dialogShown: Boolean = false, podName: String = "",
 class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
   def render(stateXSession: StateXSession[State]): VdomElement = {
     val loggedIn = stateXSession.session.isDefined
-    NavBar(expand = "lg", bg = "dark", variant = "dark")(
-      NavBarBrand("#")(
-        <.div(^.display := "flex",
-          <.img(^.src := "public/spotbox/images/logo.png", ^.alt := "spoter.ME",
-            ^.className := "d-inline-block align-top", ^.width := 205.px, ^.height := 35.px))),
-      NavBarToggle()(^.aria.controls := "basic-navbar-nav"),
-      NavBarCollapse()(^.id := "basic-navbar-nav")(
-        Nav()(^.className := "mr-auto")(
-          renderWhen(loggedIn)(<.div(
-            renderWhen(ResourceService.getSpotPodFromStore(stateXSession.state.user).nonEmpty)(
-              Button(variant = "secondary", onClick = startPodCreation(_))("Delete spoter.ME POD"))
-              .getOrElse(Button(onClick = startPodCreation(_))("Create spoter.ME POD")),
-            renderDialog(stateXSession))
+    <.div(^.borderBottom := "5px #0062cc solid",
+      NavBar(expand = "lg", bg = "white")(
+        NavBarBrand("#")(
+          <.div(^.display := "flex",
+            <.img(^.src := "public/spotbox/images/logo.svg", ^.alt := "spoter.ME",
+              ^.className := "d-inline-block align-top", ^.marginLeft := "auto", ^.width := 205.px, ^.height := 35.px))),
+        NavBarToggle()(^.aria.controls := "basic-navbar-nav"),
+        NavBarCollapse()(^.id := "basic-navbar-nav")(
+          Nav()(^.className := "ml-auto")(
+            renderWhen(loggedIn)(<.div(
+              renderWhen(ResourceService.getSpotPodFromStore(stateXSession.state.user).nonEmpty)(
+                Button(variant = "link", size = "sm", onClick = startPodOperation(_))("Delete spoter.ME POD"))
+                .getOrElse(Button(variant = "link", size = "sm", onClick = startPodOperation(_))("Create spoter.ME POD")),
+              renderDialog(stateXSession))
+            )
+          ),
+          Nav()(^.id := "login-button",
+            <.div(^.id := "login-button", AuthButton("https://solidcommunity.net/common/popup.html", loggedIn = loggedIn))
+          ),
+          Nav()(
+            NavBarText()(^.id := "logged-in-user", ^.className := "ui-elem", ^.marginLeft := 10.px, Value("user.name")).when(loggedIn)
           )
         ),
-        Nav()(^.id := "login-button",
-          NavBarText()(^.id := "logged-in-user", ^.className := "ui-elem", Value("user.name")).when(loggedIn),
-          <.div(^.id := "login-button", AuthButton("https://solidcommunity.net/common/popup.html", loggedIn = loggedIn)))),
-      renderError(stateXSession)
+        renderError(stateXSession)
+      )
     )
   }
 
@@ -93,7 +99,7 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
     handleEsc(() => setDialogShownFlag(false)).orElse(handleEnter(() =>
       bs.state.flatMap(sxs => confirmPodCreation(sxs.state.user, sxs.state.podName)(e)))).orElse(ignoreKey)(e.keyCode)
 
-  private def startPodCreation(e: ReactEventFromInput): Callback = setDialogShownFlag(true)
+  private def startPodOperation(e: ReactEventFromInput): Callback = setDialogShownFlag(true)
 
   private def setDialogShownFlag(flag: Boolean): Callback =
     bs.modState(sxs => sxs.copy(state = sxs.state.copy(dialogShown = flag)))

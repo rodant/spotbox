@@ -71,15 +71,17 @@ object ResourceService {
 
   private val podApiKey = "APlbQ8NCmR_WAJqq40cpRcEkp_ZyH1B39F0UU5ZuwY1l"
 
+  private def basicApiRequest: RequestT[Empty, Either[String, String], Nothing] = basicRequest.header(Header("API-Key", podApiKey))
+
   def getSpotPod(user: User): Future[Option[IRI]] =
     for {
-      res <- basicRequest.header(Header("API-Key", podApiKey)).get(buildPodApiURI(user)).send()
+      res <- basicApiRequest.get(buildPodApiURI(user)).send()
     } yield res.header(HeaderNames.Location).map(IRI(_))
 
   def createSpotPod(user: User, podName: String): Future[Either[String, String]] = {
     val uri = buildPodApiURI(user)
     for {
-      resp <- basicRequest.header(Header("API-Key", podApiKey)).post(uri).body("podName" -> podName).send().flatMap {
+      resp <- basicApiRequest.post(uri).body("podName" -> podName).send().flatMap {
         case r if r.isSuccess =>
           val maybeLoc = r.header(HeaderNames.Location)
             .fold[Either[String, String]](Left(s"Error: no ${HeaderNames.Location} header present"))(Right(_))
@@ -97,7 +99,7 @@ object ResourceService {
   def deleteSpotPod(user: User): Future[Either[String, String]] = {
     val uri = buildPodApiURI(user)
     for {
-      loc <- basicRequest.header(Header("API-Key", podApiKey)).delete(uri).send().map {
+      loc <- basicApiRequest.delete(uri).send().map {
         case r if r.isSuccess => r.header(HeaderNames.Location).toRight("Impossible code branch, location header!")
         case r if r.isClientError => Left(s"Client Error: ${r.code}")
         case r => Left(s"Server Error: ${r.code}")
