@@ -1,16 +1,19 @@
 package me.spoter.pages
 
 import japgolly.scalajs.react.component.Scala.BackendScope
-import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceiveProps
+import japgolly.scalajs.react.component.builder.Lifecycle
+import japgolly.scalajs.react.component.builder.Lifecycle.{ComponentWillReceiveProps, NoSnapshot}
 import japgolly.scalajs.react.vdom.VdomElement
 import japgolly.scalajs.react.{Callback, Reusability, ScalaComponent}
 import me.spoter.models.rdf.IRI
 import me.spoter.models.{FSResource, File, Folder}
 import me.spoter.services.ResourceService
+import me.spoter.solid_libs.SolidAuth
 import me.spoter.{Session, SessionTracker, StateXSession}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.scalajs.js
 
 object SPOTBox {
 
@@ -38,7 +41,7 @@ object SPOTBox {
     }
 
     override def fetchEntities(props: Props, s: Session, forceLoad: Boolean = false): Future[State] = {
-      val (effectiveIRI, isWebId) = if (props.iri == IRI.BlankNodeIRI) (IRI(s.webId), true) else (props.iri, false )
+      val (effectiveIRI, isWebId) = if (props.iri == IRI.BlankNodeIRI) (IRI(s.webId), true) else (props.iri, false)
       ResourceService.listFolder(effectiveIRI, isWebId = isWebId, forceLoad = forceLoad).map { rs =>
         val resourceOrd = new Ordering[FSResource] {
           override def compare(x: FSResource, y: FSResource): Int = (x, y) match {
@@ -64,6 +67,7 @@ object SPOTBox {
       .renderBackend[Backend]
       .componentWillReceiveProps(handleNextProps)
       .componentDidMount(c => trackSessionOn(s => c.backend.fetchEntities(c.props, s))(c))
+      .componentDidUpdate(c => showLoginIfNeededOnUpdate(c))
       .componentWillUnmountConst(trackSessionOff())
       .configure(Reusability.shouldComponentUpdate)
       .build
@@ -75,6 +79,16 @@ object SPOTBox {
             c.modState(old => old.copy(state = s))
           }
       }
+
+    private def showLoginIfNeededOnUpdate(c: Lifecycle.ComponentDidUpdate[Props, StateXSession[State], Backend, NoSnapshot]) =
+      Callback(requestLoginIfNeeded(c.currentState.session.isEmpty))
+
+    private def requestLoginIfNeeded(noSession: Boolean) = {
+      if (noSession) {
+        val args = js.Dynamic.literal(popupUri = "https://solidcommunity.net/common/popup.html")
+        SolidAuth.popupLogin(args)
+      }
+    }
 
     def apply(iriS: String): VdomElement = component(Props(IRI(iriS))).vdomElement
   }

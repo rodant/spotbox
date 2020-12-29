@@ -32,23 +32,24 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
 
   def render(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     val rs = sxs.state.rs
+    val sessionExists = sxs.session.isDefined
     Container(
       Row()(^.borderBottom := "1px lightgrey solid", ^.paddingBottom := 5.px)(
         Col(xl = 10, lg = 10, md = 10, sm = 9, xs = 9)(
           <.div(^.display := "flex",
             <.i(^.color := "#F97B", ^.alignSelf := "center", ^.className := "fas fa-folder-open fa-2x ui-elem"),
-            <.div(^.display := "flex", renderBreadcrumb(props, sxs))
+            <.div(^.display := "flex", renderBreadcrumb(props, sxs)).when(sessionExists)
           )
         ),
         Col()(
           <.div(^.display := "flex", ^.height := "100%",
-            renderWhen(sxs.session.isDefined) {
+            renderWhen(sessionExists) {
               <.i(^.className := "fas fa-folder-plus ui-elem action-icon",
                 ^.title := "New Directory",
                 ^.alignSelf := "center",
                 ^.onClick --> bs.modState(old => old.copy(state = old.state.copy(newFSResource = Option(newFolder())))))
             },
-            renderWhen(sxs.session.isDefined) {
+            renderWhen(sessionExists) {
               <.i(^.className := "fas fa-file-upload ui-elem action-icon",
                 ^.title := "Upload file",
                 ^.alignSelf := "center",
@@ -58,9 +59,6 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
         )
       ),
       renderWhen(sxs.state.uploading)(renderUploadDialog(props, sxs)),
-      renderWhen(sxs.session.isEmpty) {
-        <.h2("Please log in!")
-      },
       sxs.session.flatMap { _ =>
         sxs.state.newFSResource.map { e =>
           Row()(
@@ -74,7 +72,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
           )
         }
       },
-      renderWhen(sxs.session.isDefined) {
+      renderWhen(sessionExists) {
         ResourceList(resourceUriFragment, rs, deleteFSResource)
       }
     )
