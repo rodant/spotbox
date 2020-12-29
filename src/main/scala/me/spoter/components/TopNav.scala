@@ -19,12 +19,14 @@ case class State(user: User, dialogShown: Boolean = false, podName: String = "",
 class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
   def render(stateXSession: StateXSession[State]): VdomElement = {
     val loggedIn = stateXSession.session.isDefined
-    <.div(^.borderBottom := "5px #0062cc solid",
+    <.div(^.borderBottom := "5px #0062ccc4 solid",
       NavBar(expand = "lg", bg = "white")(
         NavBarBrand("#")(
-          <.div(^.display := "flex",
+          <.div(
             <.img(^.src := "public/spotbox/images/logo.svg", ^.alt := "spoter.ME",
-              ^.className := "d-inline-block align-top", ^.marginLeft := "auto", ^.width := 205.px, ^.height := 35.px))),
+              ^.className := "d-inline-block align-top", ^.marginLeft := "auto", ^.width := 205.px, ^.height := 35.px),
+            <.p(^.className := "tagline", ^.fontSize := 14.px, "Digitalization with the focus on people")
+          )),
         NavBarToggle()(^.aria.controls := "basic-navbar-nav"),
         NavBarCollapse()(^.id := "basic-navbar-nav")(
           Nav()(^.className := "ml-auto")(
