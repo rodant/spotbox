@@ -100,8 +100,8 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
     Breadcrumb(bsPrefix = "spoter-breadcrumb")(^.alignSelf := "center")(
       pathCompIriPairs.zipWithIndex.toVdomArray {
         case ((_, iri), 0) =>
-          BreadcrumbItem(active = pathCompIriPairs.size == 1, href = "/")(
-            ^.key := iri.toString)(<.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em"),
+          BreadcrumbItem(active = pathCompIriPairs.size == 1, href = "/#")(
+            ^.key := iri.toString)(<.i(^.alignSelf := "center", ^.className := "fas fa-home", ^.fontSize := "1.3em", ^.color := "#0062ccdb"),
             <.i(^.marginLeft := "0.2em", "ME"))
         case ((pc, iri), ind) =>
           BreadcrumbItem(active = ind == pathCompIriPairs.length - 1, href = s"#$resourceUriFragment?iri=$iri")(
