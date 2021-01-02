@@ -52,6 +52,18 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
   private def renderDialog(stateXSession: StateXSession[State]): VdomElement = {
     val (user, dialogShown, podName) = (stateXSession.state.user, stateXSession.state.dialogShown, stateXSession.state.podName)
     val hasSpotPod = ResourceService.getSpotPodFromStore(user).nonEmpty
+
+    def buildButtons(confirmElement: VdomElement) = {
+      <.div(^.float := "right",
+        <.span(^.className := "ui-elem",
+          Button(variant = "secondary", onClick = (_: ReactEventFromInput) => setDialogShownFlag(false))("Cancel")
+        ),
+        <.span(
+          confirmElement
+        )
+      )
+    }
+
     Modal(size = "lg", show = dialogShown, onHide = (_: Unit) => setDialogShownFlag(false))(
       ModalHeader(closeButton = true)(
         ModalTitle()(
@@ -59,23 +71,28 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
           else "Create spoter.ME POD")
       ),
       ModalBody()(
-        if (hasSpotPod)
-          <.p("You are about to delete your POD from the spoter.ME server. The POD must be empty, otherwise the operation will fail.")
+        if (hasSpotPod) {
+          <.div(
+            <.p("You are about to delete your POD from the spoter.ME server. The POD must be empty, otherwise the operation will fail."),
+            buildButtons(Button(onClick = confirmPodDeletion(user)(_))("Delete POD"))
+          )
+        }
         else {
           <.div(
             <.p("You are about to create an own Solid POD on the spoter.ME server. Please fill out the next form and confirm."),
-            Form(validated = true)(^.noValidate := true, ^.onSubmit ==> dismissOnSubmit)(
+            Form(validated = true)(^.onSubmit ==> confirmPodCreation(user, podName))(
               FormControl(value = podName, size = "sm", onChange = onChangeName(_))(
                 ^.placeholder := "POD Name", ^.autoFocus := true, ^.required := true, ^.minLength := 3, ^.maxLength := 40,
-                ^.onKeyUp ==> handleKey)()
+                ^.onKeyUp ==> handleKey)(),
+              FormCheck()(
+                FormCheckInput(isStatic = true)(^.required := true, ^.marginTop := 0.7.rem, ^.marginRight := 0.5.rem),
+                <.a(^.href := "https://spoter.me/datenschutzerklaerung-privacy-policy", ^.target := "_blank",
+                  ^.marginTop := 0.7.rem)("Please Agree to Terms and Conditions")
+              ),
+              buildButtons(Button(`type` = "submit")("Create POD")),
             )
           )
         }
-      ),
-      ModalFooter()(
-        Button(variant = "secondary", onClick = (_: ReactEventFromInput) => setDialogShownFlag(false))("Cancel"),
-        if (hasSpotPod) Button(onClick = confirmPodDeletion(user)(_))("Delete POD")
-        else Button(onClick = confirmPodCreation(user, podName)(_))("Create POD")
       )
     )
   }
@@ -98,8 +115,7 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
   }
 
   private def handleKey(e: ReactKeyboardEvent): Callback =
-    handleEsc(() => setDialogShownFlag(false)).orElse(handleEnter(() =>
-      bs.state.flatMap(sxs => confirmPodCreation(sxs.state.user, sxs.state.podName)(e)))).orElse(ignoreKey)(e.keyCode)
+    handleEsc(() => setDialogShownFlag(false)).orElse(ignoreKey)(e.keyCode)
 
   private def startPodOperation(e: ReactEventFromInput): Callback = setDialogShownFlag(true)
 
@@ -109,8 +125,15 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
   private def setErrorMessage(err: Option[String]): Callback =
     bs.modState(sxs => sxs.copy(state = sxs.state.copy(currentErrMessage = err)))
 
-  private def confirmPodCreation(user: User, podName: String)(e: ReactEvent): Callback =
-    runPodManagementOp(ResourceService.createSpotPod(user, podName))
+  private def confirmPodCreation(user: User, podName: String)(e: ReactEventFromInput): Callback = {
+    val valid = e.currentTarget.checkValidity()
+    e.preventDefault()
+    e.stopPropagation()
+    if (valid)
+      runPodManagementOp(ResourceService.createSpotPod(user, podName))
+    else
+      Callback.empty
+  }
 
   private def confirmPodDeletion(user: User)(e: ReactEventFromInput): Callback =
     runPodManagementOp(ResourceService.deleteSpotPod(user))
