@@ -44,7 +44,7 @@ object Footer {
                 ^.className := "image wp-image-181  attachment-thumbnail size-thumbnail lazy-loaded")),
           ),
           <.div(^.className := "site-credit",
-            <.a(^.href := "https://spoter.me", "spoter.ME"), ^.target:= "_blank", "Digitalization with the focus on people")
+            <.a(^.href := "https://spoter.me", ^.target:= "_blank", "spoter.ME"), ^.target:= "_blank", "Digitalization with the focus on people")
         ))).build
 
   def apply(): Unmounted[Unit, Unit, Unit] = component()
