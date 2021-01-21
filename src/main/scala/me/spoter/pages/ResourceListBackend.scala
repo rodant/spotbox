@@ -16,19 +16,23 @@ import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.ArrayBufferView
 
-case class State(rs: Iterable[FSResource], newFSResource: Option[FSResource] = None, uploading: Boolean = false)
+case class State(rs: Iterable[FSResource], newFSResource: Option[FSResource] = None, uploading: Boolean = false, loading: Boolean = false)
 
 abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[State]]) {
   protected val resourceUriFragment: String
   protected val resourceRenderName: String
 
-  protected val deleteFSResource: Option[FSResource => Callback] = None
+  protected val deleteFSResource: Option[(ResourceListBackend, FSResource) => Callback] = None
 
   protected def newFolder(): Folder
 
   protected def createFSResource(props: SPOTBox.Props, sxs: StateXSession[State]): Callback
 
   def fetchEntities(props: SPOTBox.Props, s: Session, forceLoad: Boolean = false): Future[State]
+
+  def setStateLoadingEnded(): Callback = bs.modState(old => old.copy(state = old.state.copy(loading = false)))
+
+  def setStateLoadingStarted(): Callback = bs.modState(old => old.copy(state = old.state.copy(loading = true)))
 
   def render(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
     val rs = sxs.state.rs
@@ -73,7 +77,10 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
         }
       },
       renderWhen(sessionExists) {
-        ResourceList(resourceUriFragment, rs, deleteFSResource)
+        ResourceList(resourceUriFragment, rs, deleteFSResource.map(_.curried(this)))
+      },
+      renderWhen(sxs.state.loading) {
+        <.img(^.src := "/public/spotbox/images/3x-intersection-loading.gif", ^.className := "loading-indicator")
       }
     )
   }
@@ -121,6 +128,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
         fileIri = props.iri.concatPath(encodedName)
         data <- file.data
         upload = RDFHelper.uploadFile(fileIri, data, file.`type`)
+        _ = showUpload(false).flatMap(_ => setStateLoadingStarted()).asAsyncCallback.unsafeToFuture()
         state = upload.flatMap(_ => fetchEntities(props, sxs.session.get, forceLoad = true))
       } yield state.map(s => bs.modState(_.copy(state = s)))
       resultOpt.fold(Callback.empty)(Callback.future(_))
@@ -170,6 +178,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
   }
 
   private def onConfirm(): Callback = bs.state.zip(bs.props).flatMap[Unit] { case (sxs, props) =>
+    setStateLoadingStarted().asAsyncCallback.unsafeToFuture()
     sxs.state.newFSResource.fold(Callback.empty)(_ => createFSResource(props, sxs))
   }
 

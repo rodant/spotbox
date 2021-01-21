@@ -32,13 +32,17 @@ object SPOTBox {
       }
     }
 
-    override protected val deleteFSResource: Option[FSResource => Callback] = Some { resource =>
-      Callback.future {
-        ResourceService.deleteResource(resource).map { _ =>
-          bs.modState(old => old.copy(state = old.state.copy(rs = old.state.rs.filter(_.iri != resource.iri))))
+    override protected val deleteFSResource: Option[(ResourceListBackend, FSResource) => Callback] =
+      Some { (backend, resource) =>
+        Callback.future {
+          backend.setStateLoadingStarted().asAsyncCallback.unsafeToFuture().flatMap { _ =>
+            ResourceService.deleteResource(resource).map { _ =>
+              bs.modState(old => old.copy(state = old.state.copy(rs = old.state.rs.filter(_.iri != resource.iri))))
+                .flatMap(_ => backend.setStateLoadingEnded())
+            }
+          }
         }
       }
-    }
 
     override def fetchEntities(props: Props, s: Session, forceLoad: Boolean = false): Future[State] = {
       val (effectiveIRI, isWebId) = if (props.iri == IRI.BlankNodeIRI) (IRI(s.webId), true) else (props.iri, false)
@@ -63,7 +67,7 @@ object SPOTBox {
 
     private val component = ScalaComponent
       .builder[Props](componentName)
-      .initialState(StateXSession[State](State(Seq()), Some(initialSession)))
+      .initialState(StateXSession[State](State(Seq(), loading = true), Some(initialSession)))
       .renderBackend[Backend]
       .componentWillReceiveProps(handleNextProps)
       .componentDidMount(c => trackSessionOn(s => c.backend.fetchEntities(c.props, s))(c))
@@ -72,13 +76,16 @@ object SPOTBox {
       .configure(Reusability.shouldComponentUpdate)
       .build
 
-    private def handleNextProps(c: ComponentWillReceiveProps[Props, StateXSession[State], Backend]): Callback =
+    private def handleNextProps(c: ComponentWillReceiveProps[Props, StateXSession[State], Backend]): Callback = {
       Callback.future {
-        c.backend.fetchEntities(c.nextProps, c.state.session.getOrElse(Session(IRI.BlankNodeIRI.innerUri)), forceLoad = true)
-          .map { s =>
-            c.modState(old => old.copy(state = s))
-          }
+        c.backend.setStateLoadingStarted().asAsyncCallback.unsafeToFuture().flatMap { _ =>
+          c.backend.fetchEntities(c.nextProps, c.state.session.getOrElse(Session(IRI.BlankNodeIRI.innerUri)), forceLoad = true)
+            .map { s =>
+              c.modState(old => old.copy(state = s))
+            }
+        }
       }
+    }
 
     private def showLoginIfNeededOnUpdate(c: Lifecycle.ComponentDidUpdate[Props, StateXSession[State], Backend, NoSnapshot]) =
       Callback(requestLoginIfNeeded(c.currentState.session.isEmpty))

@@ -22,6 +22,13 @@ body {
     color: #6c757d;
 }
 
+.loading-indicator {
+    position: fixed;
+    z-index: 1000;
+    left: 50%;
+    top: 30%;
+}
+
 @media (min-width: 1300px) {
     .container {
         max-width: 1240px;
