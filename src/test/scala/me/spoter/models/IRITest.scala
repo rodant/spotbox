@@ -1,9 +1,9 @@
 package me.spoter.models
 
 import me.spoter.models.rdf.IRI
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class IRITest extends FunSuite {
+class IRITest extends AnyFunSuite {
 
   test("removeConsecutiveSlashes") {
     assertResult(IRI("http://example/level0/level1"), "Error with slash repetition in path")(

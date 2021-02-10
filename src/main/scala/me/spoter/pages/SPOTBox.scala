@@ -2,7 +2,7 @@ package me.spoter.pages
 
 import japgolly.scalajs.react.component.Scala.BackendScope
 import japgolly.scalajs.react.component.builder.Lifecycle
-import japgolly.scalajs.react.component.builder.Lifecycle.{ComponentWillReceiveProps, NoSnapshot}
+import japgolly.scalajs.react.component.builder.Lifecycle.NoSnapshot
 import japgolly.scalajs.react.vdom.VdomElement
 import japgolly.scalajs.react.{Callback, Reusability, ScalaComponent}
 import me.spoter.models.rdf.IRI
@@ -69,17 +69,17 @@ object SPOTBox {
       .builder[Props](componentName)
       .initialState(StateXSession[State](State(Seq(), loading = true), Some(initialSession)))
       .renderBackend[Backend]
-      .componentWillReceiveProps(handleNextProps)
       .componentDidMount(c => trackSessionOn(s => c.backend.fetchEntities(c.props, s))(c))
-      .componentDidUpdate(c => showLoginIfNeededOnUpdate(c))
+      .componentDidUpdate(c => showLoginIfNeededOnUpdate(c) >>
+        (if (c.prevProps != c.currentProps) handleNextProps(c) else Callback.empty))
       .componentWillUnmountConst(trackSessionOff())
       .configure(Reusability.shouldComponentUpdate)
       .build
 
-    private def handleNextProps(c: ComponentWillReceiveProps[Props, StateXSession[State], Backend]): Callback = {
+    private def handleNextProps(c: Lifecycle.ComponentDidUpdate[Props, StateXSession[State], Backend, NoSnapshot]): Callback = {
       Callback.future {
         c.backend.setStateLoadingStarted().asAsyncCallback.unsafeToFuture().flatMap { _ =>
-          c.backend.fetchEntities(c.nextProps, c.state.session.getOrElse(Session(IRI.BlankNodeIRI.innerUri)), forceLoad = true)
+          c.backend.fetchEntities(c.currentProps, c.currentState.session.getOrElse(Session(IRI.BlankNodeIRI.innerUri)), forceLoad = true)
             .map { s =>
               c.modState(old => old.copy(state = s))
             }

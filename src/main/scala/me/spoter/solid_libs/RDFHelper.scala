@@ -74,7 +74,7 @@ object RDFHelper {
   def listDir(dirUri: URI, property: js.Dynamic, forceLoad: Boolean = false): Future[Seq[URI]] =
     RDFHelper.loadEntity[Seq[URI]](dirUri, forceLoad) { _ =>
       val filesNodes = RDFHelper.getAll(dirUri, property)
-      filesNodes.map(f => new URI(f.value.toString))
+      filesNodes.map(f => new URI(f.value.toString)).toSeq
     }
 
   def loadEntity[A](sub: URI, forceLoad: Boolean = false)(b: js.Object => A): Future[A] = {
@@ -114,7 +114,7 @@ object RDFHelper {
     val objNode = obj.map(o => RDFLib.sym(o.toString)).orUndefined
     val propNode = prop.orUndefined
     val docNode = doc.map(d => RDFLib.sym(d.toString)).orUndefined
-    store.`match`(subNode, propNode, objNode, docNode).asInstanceOf[js.Array[js.Dynamic]]
+    store.`match`(subNode, propNode, objNode, docNode).asInstanceOf[js.Array[js.Dynamic]].toSeq
   }
 
   private def doUpdate(delSts: Seq[js.Dynamic], st: Seq[js.Dynamic]): Future[Unit] = {

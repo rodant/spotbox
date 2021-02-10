@@ -100,7 +100,7 @@ object ResourceList {
     val close = (_: Unit) => $.modState(_.copy(dataToOpen = None))
     $.state.dataToOpen.map { data =>
       val mimeTypeRegex = "data:(.+);.+".r("mimeType")
-      val mimeType = mimeTypeRegex.findFirstMatchIn(data).map { m =>
+      val mimeType = mimeTypeRegex.findFirstMatchIn(data.substring(0, 50)).map { m =>
         m.group("mimeType")
       }.getOrElse(File.defaultType)
       val contentView = mimeType match {
@@ -143,7 +143,7 @@ object ResourceList {
   private def readFileData(f: File)(op: FileReader => Blob => Unit): Future[String] =
     RDFHelper.flatLoadEntity(f.iri.innerUri, forceLoad = true) {
       case res: Response =>
-        val promise = Promise[String]
+        val promise = Promise[String]()
         val reader = new FileReader()
         reader.onload = _ => promise.success(reader.result.asInstanceOf[String])
         reader.onerror = _ => promise.failure(new Exception(s"Error reading the file for data URL: ${f.name}"))
