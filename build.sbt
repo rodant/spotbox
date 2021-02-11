@@ -1,4 +1,4 @@
-val reactVersion = "16.13.1"
+val reactVersion = "16.14.0"
 val scalaJSReactVersion = "1.7.7"
 val scalaCssVersion = "0.7.0"
 
