@@ -15,10 +15,6 @@ lazy val root = (project in file(".")).
     scalacOptions += "-Xfatal-warnings",
     scalacOptions += "-deprecation",
     scalaJSUseMainModuleInitializer := true,
-    // creates single js resource file for easy integration in html page
-    //skip in packageJSDependencies := false,
-    version in webpack := "4.28.1",
-    version in startWebpackDevServer := "3.1.14",
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "1.1.0",
       "com.github.japgolly.scalajs-react" %%% "core" % scalaJSReactVersion,
