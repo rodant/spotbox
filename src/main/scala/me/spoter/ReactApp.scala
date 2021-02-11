@@ -11,7 +11,7 @@ object ReactApp {
   @JSExport
   def main(args: Array[String]): Unit = {
     AppCSS.load()
-    AppRouter.router().renderIntoDOM(dom.document.getElementById("spotbox-app"))
+    AppRouter.router().renderIntoDOM(dom.document.getElementById("spotpod-app"))
   }
 
 }

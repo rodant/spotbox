@@ -2,6 +2,8 @@ package me.spoter.models.rdf
 
 import java.net.URI
 
+import scala.annotation.tailrec
+
 /**
   * Wrapper around the java.net.URI class.
   */
@@ -33,13 +35,16 @@ case class IRI(private val sourceUri: URI) {
   def normalize: IRI = IRI(innerUri.normalize())
 
   override def toString: String = uriStr
+
+  def shortString: String = if (parent != this) lastPathComponent else authority
 }
 
 object IRI {
-  val BlankNodeIRI = IRI("_blank")
+  val BlankNodeIRI: IRI = IRI("_blank")
 
   def apply(uriStr: String): IRI = IRI(URI.create(uriStr))
 
+  @tailrec
   def root(iri: IRI): IRI = iri.parent match {
     case p if p == iri => iri
     case p => root(p)

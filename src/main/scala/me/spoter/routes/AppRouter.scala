@@ -4,11 +4,13 @@ import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.vdom.html_<^._
 import me.spoter.components.{Footer, TopNav}
 import me.spoter.models.rdf.IRI
-import me.spoter.pages.SPOTBox
+import me.spoter.pages.SpotPOD
 
 object AppRouter {
 
   sealed trait AppPage
+
+  case object Home extends AppPage
 
   case class Explorer(iri: String = IRI.BlankNodeIRI.toString) extends AppPage {
     lazy val dirIri: String = IRI(if (iri.endsWith("/")) iri else s"$iri/").normalize.toString
@@ -17,10 +19,10 @@ object AppRouter {
   private val config = RouterConfigDsl[AppPage].buildConfig { dsl =>
     import dsl._
 
-    (trimSlashes
-      | staticRoute(root, Explorer()) ~> render(SPOTBox.Page(IRI.BlankNodeIRI.toString))
-      | dynamicRouteCT[Explorer]("#explorer?iri=" ~ string(".+").caseClass[Explorer]) ~> dynRender(p => SPOTBox.Page(p.dirIri)))
-      .notFound(redirectToPage(Explorer())(Redirect.Replace))
+    (removeLeadingSlashes
+      | staticRoute(root, Home) ~> render(SpotPOD.Page(IRI.BlankNodeIRI.toString))
+      | dynamicRouteCT[Explorer]("#explorer?iri=" ~ string(".+").caseClass[Explorer]) ~> dynRender(p => SpotPOD.Page(p.dirIri)))
+      .notFound(redirectToPage(Home)(SetRouteVia.HistoryReplace))
       .renderWith(layout)
   }
 

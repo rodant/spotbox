@@ -6,3 +6,4 @@ spotbox.iml
 
 # Executables
 
+/public/spotpod/js/*

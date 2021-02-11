@@ -71,14 +71,20 @@ object RDFHelper {
 
   def reloadAndSync(iri: IRI): Unit = updateManager.reloadAndSync(RDFLib.sym(iri.toString))
 
-  def listDir(dirUri: URI, forceLoad: Boolean = false): Future[Seq[URI]] = RDFHelper.loadEntity[Seq[URI]](dirUri, forceLoad) {
-    val filesNodes = RDFHelper.getAll(dirUri, RDFHelper.LDP("contains"))
-    filesNodes.map(f => new URI(f.value.toString))
+  def listDir(dirUri: URI, property: js.Dynamic, forceLoad: Boolean = false): Future[Seq[URI]] =
+    RDFHelper.loadEntity[Seq[URI]](dirUri, forceLoad) { _ =>
+      val filesNodes = RDFHelper.getAll(dirUri, property)
+      filesNodes.map(f => new URI(f.value.toString)).toSeq
+    }
+
+  def loadEntity[A](sub: URI, forceLoad: Boolean = false)(b: js.Object => A): Future[A] = {
+    val options: UndefOr[js.Dynamic] = if (forceLoad) js.Dynamic.literal(force = forceLoad) else js.undefined
+    load(sub, options).map(b)
   }
 
-  def loadEntity[A](sub: URI, forceLoad: Boolean = false)(b: => A): Future[A] = {
+  def flatLoadEntity[A](sub: URI, forceLoad: Boolean = false)(b: js.Object => Future[A]): Future[A] = {
     val options: UndefOr[js.Dynamic] = if (forceLoad) js.Dynamic.literal(force = forceLoad) else js.undefined
-    load(sub, options).map(_ => b)
+    load(sub, options).flatMap(b)
   }
 
   def getAll(sub: URI, prop: js.Dynamic): js.Array[js.Dynamic] =
@@ -108,12 +114,12 @@ object RDFHelper {
     val objNode = obj.map(o => RDFLib.sym(o.toString)).orUndefined
     val propNode = prop.orUndefined
     val docNode = doc.map(d => RDFLib.sym(d.toString)).orUndefined
-    store.`match`(subNode, propNode, objNode, docNode).asInstanceOf[js.Array[js.Dynamic]]
+    store.`match`(subNode, propNode, objNode, docNode).asInstanceOf[js.Array[js.Dynamic]].toSeq
   }
 
   private def doUpdate(delSts: Seq[js.Dynamic], st: Seq[js.Dynamic]): Future[Unit] = {
     val p = Promise[Unit]()
-    val callback = (uri: UndefOr[String], success: Boolean, error: UndefOr[String]) => {
+    val callback = (_: UndefOr[String], success: Boolean, error: UndefOr[String]) => {
       if (success) {
         p.success(())
       } else {

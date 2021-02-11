@@ -11,7 +11,7 @@ import scala.scalajs.js.UndefOr
 case class RdfLiteral(value: String, lang: Option[LangAnnotation] = None, typ: js.UndefOr[js.Dynamic] = js.undefined) {
   def toJSRdfLiteral: js.Dynamic = RDFLib.literal(
     value,
-    lang.fold[UndefOr[String]](js.undefined)(l => UndefOr.any2undefOrA(l.value)),
+    lang.fold[UndefOr[String]](js.undefined)(l => l.value),
     typ)
 }
 
