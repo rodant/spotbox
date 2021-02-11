@@ -23,7 +23,7 @@ class Backend(bs: BackendScope[Unit, StateXSession[State]]) {
       NavBar(expand = "lg", bg = "white")(
         NavBarBrand("#")(
           <.div(
-            <.img(^.src := "public/spotbox/images/logo.svg", ^.alt := "spoter.ME",
+            <.img(^.src := "public/spotpod/images/logo.svg", ^.alt := "spoter.ME",
               ^.className := "d-inline-block align-top", ^.marginLeft := "auto", ^.width := 205.px, ^.height := 35.px),
             <.p(^.className := "tagline", ^.fontSize := 14.px, "Digitalization with the focus on people")
           )),

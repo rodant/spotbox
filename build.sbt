@@ -9,7 +9,7 @@ lazy val root = (project in file(".")).
       scalaVersion := "2.13.3",
       version      := "0.1.0-SNAPSHOT"
     )),
-    name := "SPOTBox",
+    name := "spot.POD",
     scalacOptions += "-feature",
     scalacOptions += "-language:higherKinds",
     scalacOptions += "-Xfatal-warnings",

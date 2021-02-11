@@ -18,7 +18,7 @@ import scala.scalajs.js.typedarray.ArrayBufferView
 
 case class State(rs: Iterable[FSResource], newFSResource: Option[FSResource] = None, uploading: Boolean = false, loading: Boolean = false)
 
-abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession[State]]) {
+abstract class ResourceListBackend(bs: BackendScope[SpotPOD.Props, StateXSession[State]]) {
   protected val resourceUriFragment: String
   protected val resourceRenderName: String
 
@@ -26,15 +26,15 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
 
   protected def newFolder(): Folder
 
-  protected def createFSResource(props: SPOTBox.Props, sxs: StateXSession[State]): Callback
+  protected def createFSResource(props: SpotPOD.Props, sxs: StateXSession[State]): Callback
 
-  def fetchEntities(props: SPOTBox.Props, s: Session, forceLoad: Boolean = false): Future[State]
+  def fetchEntities(props: SpotPOD.Props, s: Session, forceLoad: Boolean = false): Future[State]
 
   def setStateLoadingEnded(): Callback = bs.modState(old => old.copy(state = old.state.copy(loading = false)))
 
   def setStateLoadingStarted(): Callback = bs.modState(old => old.copy(state = old.state.copy(loading = true)))
 
-  def render(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
+  def render(props: SpotPOD.Props, sxs: StateXSession[State]): VdomElement = {
     val rs = sxs.state.rs
     val sessionExists = sxs.session.isDefined
     Container(
@@ -80,12 +80,12 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
         ResourceList(resourceUriFragment, rs, deleteFSResource.map(_.curried(this)))
       },
       renderWhen(sxs.state.loading) {
-        <.img(^.src := "/public/spotbox/images/3x-intersection-loading.gif", ^.className := "loading-indicator")
+        <.img(^.src := "/public/spotpod/images/3x-intersection-loading.gif", ^.className := "loading-indicator")
       }
     )
   }
 
-  private def renderBreadcrumb(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
+  private def renderBreadcrumb(props: SpotPOD.Props, sxs: StateXSession[State]): VdomElement = {
     def parent(iri: IRI): IRI = if (ResourceService.isPod(iri) || iri == iri.parent) IRI.BlankNodeIRI else iri.parent
 
     def extendedLastPathComponent(iri: IRI): String = if (ResourceService.isPod(iri)) iri.removedTailingSlash.toString else iri.lastPathComponent
@@ -117,7 +117,7 @@ abstract class ResourceListBackend(bs: BackendScope[SPOTBox.Props, StateXSession
     )
   }
 
-  private def renderUploadDialog(props: SPOTBox.Props, sxs: StateXSession[State]): VdomElement = {
+  private def renderUploadDialog(props: SpotPOD.Props, sxs: StateXSession[State]): VdomElement = {
     def confirmUpload(sxs: StateXSession[State])(e: ReactEvent): Callback = {
       val resultOpt = for {
         file <- sxs.state.newFSResource.map {

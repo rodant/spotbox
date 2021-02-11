@@ -18,7 +18,7 @@ object LoadingIndicator {
   class Backend(bs: BackendScope[Props, State])  extends OnUnmount {
     def render(state: State): VdomElement = <.div(
       renderWhen(state.loadingCount > 0)(
-        <.img(^.src := "/public/spotbox/images/3x-intersection-loading.gif", ^.className := "loading-indicator")
+        <.img(^.src := "/public/spotpod/images/3x-intersection-loading.gif", ^.className := "loading-indicator")
       )
     )
   }

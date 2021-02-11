@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.scalajs.js
 
-object SPOTBox {
+object SpotPOD {
 
   case class Props(iri: IRI)
 
@@ -63,11 +63,11 @@ object SPOTBox {
 
   object Page extends SessionTracker[Props, State, Backend] {
 
-    private val componentName: String = "SPOTBoxPage"
+    private val componentName: String = "SpotPODPage"
 
     private val component = ScalaComponent
       .builder[Props](componentName)
-      .initialState(StateXSession[State](State(Seq(), loading = true), Some(initialSession)))
+      .initialState(StateXSession[State](State(Seq()), Some(initialSession)))
       .renderBackend[Backend]
       .componentDidMount(c => trackSessionOn(s => c.backend.fetchEntities(c.props, s))(c))
       .componentDidUpdate(c => showLoginIfNeededOnUpdate(c) >>
